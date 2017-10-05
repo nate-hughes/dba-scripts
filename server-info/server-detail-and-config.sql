@@ -37,10 +37,88 @@ SELECT	SERVERPROPERTY('ServerName') AS HostName -- Both the Windows server and i
 			ELSE 'UNKNOWN'
 		END AS OS -- https://msdn.microsoft.com/library/ms724832%28vs.85%29.aspx?f=255&MSPPError=-2147217396
 		,REPLACE(wi.windows_service_pack_level,'Service Pack ','') AS OSSP -- For Windows, returns the service pack number. Cannot be NULL.
-		,SERVERPROPERTY('InstanceDefaultDataPath') AS DataPath -- Name of the default path to the instance data files.
-		,SERVERPROPERTY('InstanceDefaultLogPath') AS LogPath -- Name of the default path to the instance log files.
 FROM	sys.dm_os_sys_info os
 		CROSS JOIN sys.dm_os_windows_info wi
 		CROSS JOIN sys.dm_exec_connections ec
 WHERE	ec.session_id = @@SPID;
 
+
+DECLARE @LoginAuditing INT
+		,@DefaultData NVARCHAR(512)
+		,@DefaultLog NVARCHAR(512)
+		,@DefaultBackup NVARCHAR(512)
+		,@NUMANodes INT
+		,@TempDbFiles INT;
+
+EXEC master..xp_instance_regread 
+    @rootkey='HKEY_LOCAL_MACHINE',
+    @key='SOFTWARE\Microsoft\MSSQLServer\MSSQLServer',
+    @value_name='AuditLevel',
+    @value=@LoginAuditing OUTPUT;
+
+EXEC master.dbo.xp_instance_regread 
+    @rootkey='HKEY_LOCAL_MACHINE',
+    @key='SOFTWARE\Microsoft\MSSQLServer\MSSQLServer',
+    @value_name='DefaultData',
+    @value=@DefaultData OUTPUT;
+
+EXEC master.dbo.xp_instance_regread 
+    @rootkey='HKEY_LOCAL_MACHINE',
+    @key='SOFTWARE\Microsoft\MSSQLServer\MSSQLServer',
+    @value_name='DefaultLog',
+    @value=@DefaultLog OUTPUT;
+
+EXEC master.dbo.xp_instance_regread 
+    @rootkey='HKEY_LOCAL_MACHINE',
+    @key='SOFTWARE\Microsoft\MSSQLServer\MSSQLServer',
+    @value_name='BackupDirectory',
+    @value=@DefaultBackup OUTPUT;
+
+/*
+http://www.sqlpassion.at/archive/2016/10/17/how-many-numa-nodes-do-i-have/
+For every available NUMA node SQL Server creates one dedicated Memory Node (besides Memory Node ID 64, which is always
+present for the Dedicated Admin Connection).
+*/
+SELECT	@NUMANodes = COUNT(*)
+FROM	sys.dm_os_memory_nodes
+WHERE	memory_node_id <> 64;
+
+SELECT	@TempDbFiles = COUNT(*)
+FROM	tempdb.sys.database_files
+WHERE	type = 0;
+
+SELECT	CAST(ROUND(MAX(os.physical_memory_kb) / 1024.0 / 1024.0,0) AS INT) AS HostMemory_GB
+		,CAST(MAX(CASE WHEN config.name = 'min server memory (MB)' THEN config.value END) AS INT) / 1024 AS MinMemory_GB
+		,CAST(MAX(CASE WHEN config.name = 'max server memory (MB)' THEN config.value END) AS INT) / 1024 AS MaxMemory_GB
+		,MAX(CASE WHEN SERVERPROPERTY('IsIntegratedSecurityOnly') = 0 THEN 'Y' ELSE 'N' END) AS MixedMode
+		,MAX(CASE @LoginAuditing
+				WHEN 0 THEN 'None'
+				WHEN 1 THEN 'Successful Logins Only'
+				WHEN 2 THEN 'Failed Logins Only'
+				WHEN 3 THEN 'Both Failed and Successful Logins'
+		END) AS LoginAuditing
+		,MAX(CASE WHEN config.name = 'cross db ownership chaining' AND config.value = 1 THEN 'Y' ELSE 'N' END) AS CrossDBChaining
+		,MAX(CASE WHEN config.name = 'remote access' AND config.value = 1 THEN 'Y' ELSE 'N' END) AS RemoteConnections
+		,MAX(CASE WHEN config.name = 'remote proc trans' AND config.value = 1 THEN 'Y' ELSE 'N' END) AS ReqDistTransaction
+		,MAX(CASE WHEN config.name = 'fill factor (%)' THEN config.value END) AS DefaultFillFactor
+		,MAX(CASE WHEN config.name = 'backup compression default' AND config.value = 1 THEN 'Y' ELSE 'N' END) AS CompressBackup
+		,@DefaultData AS DataPath
+		,@DefaultLog AS LogPath
+		,@DefaultBackup AS BackupPath
+		,MAX(CASE WHEN config.name = 'filestream access level' THEN CASE CAST(config.value AS INT)
+				WHEN 0 THEN 'Disabled'
+				WHEN 1 THEN 'Transact-SQL access enabled'
+				WHEN 2 THEN 'Full access enabled'
+		END END) AS FILESTREAMAccessLevel
+		,MAX(CASE WHEN config.name = 'server trigger recursion' AND config.value = 1 THEN 'Y' ELSE 'N' END) AS RecursiveTriggers
+		,MAX(CASE WHEN config.name = 'optimize for ad hoc workloads' AND config.value = 1 THEN 'Y' ELSE 'N' END) AS OptimizeForAdHocWorkloads
+		,MAX(CASE WHEN config.name = 'scan for startup procs' AND config.value = 1 THEN 'Y' ELSE 'N' END) AS ScanForStartupProcs
+		,MAX(CASE WHEN config.name = 'cost threshold for parallelism' THEN config.value END) AS CostThresholdParallelism
+		,MAX(os.cpu_count) AS HostCPUs
+		,@NUMANodes AS NUMANodes
+		,MAX(CASE WHEN config.name = 'max degree of parallelism' THEN config.value END) AS MAXDOP
+		,@TempDbFiles AS TempDbFiles
+		,MAX(CASE WHEN config.name = 'Database Mail XPs' AND config.value = 1 THEN 'Y' ELSE 'N' END) AS DBMailEnabled
+		,MAX(CASE WHEN config.name = 'remote admin connections' AND config.value = 1 THEN 'Y' ELSE 'N' END) AS DACEnabled
+FROM	sys.configurations config
+		CROSS JOIN sys.dm_os_sys_info os;
