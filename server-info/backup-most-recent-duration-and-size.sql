@@ -1,23 +1,18 @@
-DECLARE @LimitToPartial BIT = 0;
-
-IF @@SERVERNAME = 'RPRMBSBETADB83'
-	SET @LimitToPartial = 1;
 
 SELECT	bak.database_name
 		, COALESCE(CASE WHEN SUM(bak.BakOrder) > 1 THEN 'FULL+DIFF'END
-			,MAX(CASE WHEN bak.backup_type != 'No backups' THEN 'FULL' END)) AS backup_type
-		, MAX(CASE WHEN bak.backup_type != 'No backups' AND bak.CompressionRatio < 100.0 THEN 1
-				WHEN bak.backup_type != 'No backups' THEN 0
+			,MAX(CASE WHEN bak.backup_type <> 'No backups' THEN 'FULL' END)) AS backup_type
+		, MAX(CASE WHEN bak.backup_type <> 'No backups' AND bak.CompressionRatio < 100.0 THEN 1
+				WHEN bak.backup_type <> 'No backups' THEN 0
 			END) AS UsedCompression
 		, MAX(bak.has_backup_checksums) AS UsedChecksum
 		, MAX(CASE WHEN bak.backup_type = 'Full backup' OR bak.backup_type = 'Partial' THEN bak.backup_start_date END) AS MostRecentFull_Date
 		, MAX(CASE WHEN bak.backup_type = 'Full backup' OR bak.backup_type = 'Partial' THEN DATEDIFF(SECOND,bak.backup_start_date,bak.backup_finish_date) END) AS MostRecentFull_Sec
 		, SUM(CASE WHEN bak.backup_type = 'Full backup' OR bak.backup_type = 'Partial' THEN bak.MostRecentSize_MB END) AS MostRecentFull_MB
-		, MAX(CASE WHEN bak.backup_type != 'Full backup' AND bak.backup_type != 'Partial' THEN bak.backup_type END) AS MostRecentOther
-		, MAX(CASE WHEN bak.backup_type != 'Full backup' AND bak.backup_type != 'Partial' THEN bak.backup_start_date END) AS MostRecentOther_Date
-		, MAX(CASE WHEN bak.backup_type != 'Full backup' AND bak.backup_type != 'Partial' THEN DATEDIFF(SECOND,bak.backup_start_date,bak.backup_finish_date) END) AS MostRecentOther_Sec
-		, SUM(CASE WHEN bak.backup_type != 'Full backup' AND bak.backup_type != 'Partial' THEN bak.MostRecentSize_MB END) AS MostRecentOther_MB
-		--, SUM(CASE WHEN bak.backup_type LIKE '%partial%' THEN bak.MostRecentSize_MB ELSE 0 END) AS Partial_MostRecentSize_MB
+		, MAX(CASE WHEN bak.backup_type <> 'Full backup' AND bak.backup_type <> 'Partial' THEN bak.backup_type END) AS MostRecentOther
+		, MAX(CASE WHEN bak.backup_type <> 'Full backup' AND bak.backup_type <> 'Partial' THEN bak.backup_start_date END) AS MostRecentOther_Date
+		, MAX(CASE WHEN bak.backup_type <> 'Full backup' AND bak.backup_type <> 'Partial' THEN DATEDIFF(SECOND,bak.backup_start_date,bak.backup_finish_date) END) AS MostRecentOther_Sec
+		, SUM(CASE WHEN bak.backup_type <> 'Full backup' AND bak.backup_type <> 'Partial' THEN bak.MostRecentSize_MB END) AS MostRecentOther_MB
 FROM	(
 			SELECT	d.name AS database_name
 					, CASE bs.type
@@ -31,7 +26,7 @@ FROM	(
 							WHEN NULL THEN 'No backups'
 							ELSE 'Unknown (' + bs.[type] + ')'
 						END AS backup_type
-					, [MostRecentSize_MB] = (CONVERT(INT, bs.compressed_backup_size / 1024 /*KB*/ / 1024 /*MB*/))
+					, (CONVERT(INT, bs.compressed_backup_size / 1024 /*KB*/ / 1024 /*MB*/)) AS [MostRecentSize_MB]
 					, bmf.physical_device_name
 					, CASE WHEN bmf.device_type IN (2, 102) THEN 'DISK'
 							WHEN bmf.device_type IN (5, 105) THEN 'TAPE'
@@ -42,8 +37,8 @@ FROM	(
 					,CONVERT(NUMERIC(4,1), (1 - (bs.compressed_backup_size * 1.0 / NULLIF(bs.backup_size, 0))) * 100) AS CompressionRatio
 					,CAST(bs.has_backup_checksums AS TINYINT) AS has_backup_checksums
 			FROM	master.sys.databases d
-					LEFT OUTER JOIN msdb..backupset bs ON bs.database_name = d.name
-					LEFT OUTER JOIN msdb..backupmediafamily bmf ON bs.media_set_id = bmf.media_set_id
+					LEFT OUTER JOIN msdb.dbo.backupset bs ON bs.database_name = d.name
+					LEFT OUTER JOIN msdb.dbo.backupmediafamily bmf ON bs.media_set_id = bmf.media_set_id
 		) bak
 WHERE	bak.BakOrder = 1
 GROUP BY bak.database_name
