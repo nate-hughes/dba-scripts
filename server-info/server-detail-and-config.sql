@@ -122,3 +122,27 @@ SELECT	CAST(ROUND(MAX(os.physical_memory_kb) / 1024.0 / 1024.0,0) AS INT) AS Hos
 		,MAX(CASE WHEN config.name = 'remote admin connections' AND config.value = 1 THEN 'Y' ELSE 'N' END) AS DACEnabled
 FROM	sys.configurations config
 		CROSS JOIN sys.dm_os_sys_info os;
+
+-- http://blog.waynesheffield.com/wayne/archive/2017/09/registry-sql-server-startup-parameters/
+
+DECLARE @RegHive    VARCHAR(50),
+        @RegKey     VARCHAR(100);
+ 
+SET @RegHive = 'HKEY_LOCAL_MACHINE';
+SET @RegKey  = 'Software\Microsoft\MSSQLSERVER\MSSQLServer\Parameters';
+ 
+-- Get all of the arguments / parameters when starting up the service.
+DECLARE @SQLArgs TABLE (
+    Value   VARCHAR(50),
+    Data    VARCHAR(500),
+    ArgNum  AS CONVERT(INTEGER, REPLACE(Value, 'SQLArg', '')));
+ 
+INSERT INTO @SQLArgs
+EXECUTE master.sys.xp_instance_regenumvalues @RegHive, @RegKey;
+ 
+SELECT  Value AS StartupParam
+       ,Data AS StartupData
+FROM    @SQLArgs;
+
+DBCC TRACESTATUS;
+
