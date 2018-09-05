@@ -45,6 +45,7 @@ DECLARE @TraceFlags TABLE (
 INSERT INTO @TraceFlags (TF, enable, enable_on_startup)
 -- To work with SQL 2005, cannot use a table value constructor.
 -- So, use SELECT statements with UNION ALL for each TF to modify.
+SELECT 1117, 1, 1 UNION ALL
 SELECT 1118, 1, 1 UNION ALL
 SELECT 1222, 0, 0 UNION ALL
 SELECT 3226, 1, 1;
