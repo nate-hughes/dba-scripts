@@ -1,0 +1,1 @@
+BACKUP LOG [dbname] TO DISK='NUL:';
