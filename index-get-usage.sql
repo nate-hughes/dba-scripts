@@ -1,12 +1,22 @@
-SELECT   OBJECT_NAME(S.[OBJECT_ID]) AS [OBJECT NAME], 
-         I.[NAME] AS [INDEX NAME], 
-         USER_SEEKS, 
-         USER_SCANS, 
-         USER_LOOKUPS, 
-         USER_UPDATES 
-FROM     SYS.DM_DB_INDEX_USAGE_STATS AS S 
-         INNER JOIN SYS.INDEXES AS I 
-           ON I.[OBJECT_ID] = S.[OBJECT_ID] 
-              AND I.INDEX_ID = S.INDEX_ID 
-WHERE    OBJECTPROPERTY(S.[OBJECT_ID],'IsUserTable') = 1 
-AND		S.database_id = DB_ID()
+DECLARE	@TblName sysname = NULL--N'TblName'
+
+SELECT	SCHEMA_NAME(o.schema_id) AS [SCHEMA]
+		,o.name AS [TABLE]
+		,i.name AS [INDEX]
+		,ISNULL(s.USER_SEEKS,0) AS USER_SEEKS
+		,ISNULL(s.USER_SCANS,0) AS USER_SCANS
+		,ISNULL(s.USER_LOOKUPS,0) AS USER_LOOKUPS
+		,ISNULL(s.USER_UPDATES,0) AS USER_UPDATES
+FROM	SYS.INDEXES AS I
+		JOIN SYS.OBJECTS AS O ON I.object_id = O.object_id
+		LEFT JOIN SYS.DM_DB_INDEX_USAGE_STATS AS S
+			ON I.object_id = S.object_id
+			AND I.index_id = S.index_id
+			AND S.database_id = DB_ID()
+WHERE	o.name = @TblName
+OR		(@TblName IS NULL
+		AND OBJECTPROPERTY(I.object_id,'IsUserTable') = 1)
+ORDER BY SCHEMA_NAME(o.schema_id)
+		,o.name
+		,i.index_id
+

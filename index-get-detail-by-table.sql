@@ -6,7 +6,7 @@ DECLARE @DBId                INT          = DB_ID()
        ,@TblId               INT
        ,@MinFragmentation    REAL         = 5.0 -- Defaulted to 5% as recommended by MS in BOL
        ,@MinPageCount        INT          = 1000 -- Defaulted to 1000 pages as recommended by MS in BOL
-       ,@EstimateCompression BIT          = 0
+       ,@EstimateCompression BIT          = 0 -- Leave off unless specifically looking for compression estimates
        ,@CompressionType     NVARCHAR(60) = N'ROW';
 
 SET @TblId = OBJECT_ID(@TblName);
@@ -52,12 +52,12 @@ SELECT  '[' + DB_NAME() + '].[' + @SchemaName + '].[' + OBJECT_NAME(@TblId, @DBI
             FOR XML PATH('')
         ), 1, 2, ''
         )                                                                                AS [Included Columns]
-       ,s.user_seeks + s.user_scans + s.user_lookups                                     AS TotalReads
-       ,s.user_updates                                                                   AS TotalWrites
+       ,ISNULL(s.user_seeks + s.user_scans + s.user_lookups,0)                           AS TotalReads
+       ,ISNULL(s.user_updates,0)                                                         AS TotalWrites
 FROM    sys.indexes                            i
         INNER JOIN sys.data_spaces             ds
             ON i.data_space_id = ds.data_space_id
-        INNER JOIN sys.dm_db_index_usage_stats AS s
+        LEFT JOIN sys.dm_db_index_usage_stats AS s
             ON  s.object_id = i.object_id
             AND i.index_id = s.index_id
 WHERE   i.object_id = @TblId
@@ -189,15 +189,15 @@ OPTION (MAXDOP 2);
 
 /****** POSSIBLE BAD INDEXES BLOCK START ******/
 SELECT  'POSSIBLE BAD (since last restart):' AS Info;
-SELECT  OBJECT_NAME(s.object_id)                                        AS [Table Name]
+SELECT  OBJECT_NAME(i.object_id)                                        AS [Table Name]
        ,i.name                                                          AS [Index Name]
        ,i.type_desc                                                     AS [Index Type]
-       ,s.user_seeks + s.user_scans + s.user_lookups                    AS [Total Reads]
-       ,s.user_updates                                                  AS [Total Writes]
-       ,s.user_updates - (s.user_seeks + s.user_scans + s.user_lookups) AS Difference
-       ,CASE WHEN s.user_updates < 1 THEN 100
-             ELSE 1.00 * (s.user_seeks + s.user_scans + s.user_lookups) / s.user_updates
-        END                                                             AS reads_per_write
+       ,ISNULL(s.user_seeks + s.user_scans + s.user_lookups,0)          AS [Total Reads]
+       ,ISNULL(s.user_updates,0)                                        AS [Total Writes]
+       ,ISNULL(s.user_updates - (s.user_seeks + s.user_scans + s.user_lookups),0) AS [Difference]
+       ,ISNULL(CASE WHEN s.user_updates < 1 THEN 100
+					 ELSE 1.00 * (s.user_seeks + s.user_scans + s.user_lookups) / s.user_updates
+				END,0)                                                  AS reads_per_write
        ,(
             SELECT  SUM(p.rows)
             FROM    sys.partitions p
@@ -206,21 +206,21 @@ SELECT  OBJECT_NAME(s.object_id)                                        AS [Tabl
         )                                                               AS Rows
        ,CASE WHEN i.is_primary_key = 1
              OR   i.is_unique_constraint = 1 THEN
-                 'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(s.object_id)) + '.'
-                 + QUOTENAME(OBJECT_NAME(s.object_id)) + ' DROP CONSTRAINT ' + QUOTENAME(i.name)
+                 'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(i.object_id)) + '.'
+                 + QUOTENAME(OBJECT_NAME(i.object_id)) + ' DROP CONSTRAINT ' + QUOTENAME(i.name)
              ELSE
-                 'DROP INDEX ' + QUOTENAME(i.name) + ' ON ' + QUOTENAME(OBJECT_SCHEMA_NAME(s.object_id)) + '.'
-                 + QUOTENAME(OBJECT_NAME(s.object_id))
+                 'DROP INDEX ' + QUOTENAME(i.name) + ' ON ' + QUOTENAME(OBJECT_SCHEMA_NAME(i.object_id)) + '.'
+                 + QUOTENAME(OBJECT_NAME(i.object_id))
         END                                                             AS [Drop Statement]
-FROM    sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
-        INNER JOIN sys.indexes      AS i WITH (NOLOCK)
+FROM    sys.indexes AS i WITH (NOLOCK)
+        LEFT JOIN sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
             ON  s.object_id = i.object_id
             AND i.index_id = s.index_id
-WHERE   OBJECTPROPERTY(s.object_id, 'IsUserTable') = 1
-AND     s.database_id = DB_ID()
-AND     s.user_updates > (s.user_seeks + s.user_scans + s.user_lookups)
-AND     i.index_id > 1
+			AND OBJECTPROPERTY(s.object_id, 'IsUserTable') = 1
+			AND s.database_id = DB_ID()
+WHERE   i.index_id > 1
 AND     i.object_id = @TblId
+AND     s.user_updates > (s.user_seeks + s.user_scans + s.user_lookups)
 ORDER BY Difference DESC
         ,[Total Writes] DESC
         ,[Total Reads] ASC
