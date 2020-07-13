@@ -1,33 +1,33 @@
-DECLARE @DBName NVARCHAR(128) = NULL
-       ,@SQL    NVARCHAR(MAX);
+DECLARE	@DBName NVARCHAR(128) = NULL
+		,@TblName NVARCHAR(128) = NULL
+		,@SQL NVARCHAR(MAX);
 
 SET @SQL =
-    CASE        WHEN @DBName IS NULL THEN 'USE [?];'
-                ELSE 'USE ' + @DBName + ';'
+    CASE
+		WHEN @DBName IS NULL THEN 'USE [?];'
+        ELSE 'USE ' + @DBName + ';'
     END
     + '
-			SELECT	DISTINCT
-					[DBId] = DB_ID()
-					, DBName = DB_NAME()
-					, TblId = o.object_id
-					, TblName = o.name
-					, StatName = si.name
-					, LastUpdDate = STATS_DATE(si.id, si.indid)
-					, UpdScript = '' UPDATE STATISTICS ['' + DB_NAME() + ''].['' + s.name + ''].['' + o.name + ''] ['' + si.name + ''];''
-			FROM	sys.sysindexes si
-					INNER JOIN (
-						SELECT	object_id
-								, rowcnt = SUM(rows)
-						FROM	sys.partitions
-						GROUP BY object_id
-						HAVING SUM(rows) > 0
-					) p ON si.id = p.object_id
-					INNER JOIN sys.objects o ON p.object_id = o.object_id
-					INNER JOIN sys.schemas s ON o.schema_id = s.schema_id
-			WHERE	((si.rowmodctr * 1.0 / p.rowcnt) > 0.3
-					OR DATEDIFF(DAY,STATS_DATE(si.id, si.indid),GETDATE()) > 30)
-			AND		o.type = ''U''
-			AND		si.name IS NOT NULL';
+		SELECT	DB_NAME() AS DBName
+				,SCHEMA_NAME(obj.schema_id) AS SchemaName	
+				,sch.name AS TblName
+				,stat.name AS StatName
+				,sp.last_updated AS LastUpdDate
+				,sp.modification_counter AS ModCounter
+				,'' UPDATE STATISTICS ['' + DB_NAME() + ''].['' + sch.name + ''].['' + obj.name + ''] ['' + stat.name + ''];'' AS UpdScript
+		FROM	sys.stats stat
+				JOIN sys.objects obj ON stat.object_id = obj.object_id
+				JOIN sys.schemas sch ON obj.schema_id = sch.schema_id
+				CROSS APPLY sys.dm_db_stats_properties(obj.object_id, stat.stats_id) sp
+		WHERE	obj.type = ''U''
+		AND		(
+					(sp.modification_counter * 1.0 / sp.rows) > 0.3
+					OR DATEDIFF(DAY,sp.last_updated,GETDATE()) > 30
+				)'
+	+ CASE
+		WHEN @TblName IS NULL THEN ';'
+        ELSE ' AND		stat.object_id = OBJECT_ID(''' + @TblName  + ''');'
+    END;
 
 IF @DBName IS NULL
     EXEC sys.sp_MSforeachdb @SQL;
