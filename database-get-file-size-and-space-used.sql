@@ -21,12 +21,19 @@ CREATE TABLE #DB_FILE_INFO (
 	, physical_name NVARCHAR(260)
 );
 
-DECLARE @l_sql NVARCHAR(4000);
+DECLARE @l_sql NVARCHAR(4000)
+		,@l_DBName NVARCHAR(128)
+;
 
 SET @l_sql =
-'USE [?];
-IF DB_NAME() <> N''?'' GOTO Error_Exit;
-
+'USE [?];'
++
+CASE WHEN @l_DBName IS NULL THEN '
+IF DB_NAME() <> N''?'' GOTO Error_Exit;'
+	ELSE '
+IF DB_NAME() <> ''' + @l_DBName + ''' GOTO Error_Exit;'
+END
++ '
 INSERT INTO #DB_FILE_INFO (
 	DBName
 	, FileGroupName

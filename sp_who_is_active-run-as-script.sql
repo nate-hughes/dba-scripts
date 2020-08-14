@@ -42,7 +42,7 @@ DECLARE
 	--0 does not pull any sleeping SPIDs
 	--1 pulls only those sleeping SPIDs that also have an open transaction
 	--2 pulls all sleeping SPIDs
-	@show_sleeping_spids TINYINT = 1,
+	@show_sleeping_spids TINYINT = 0,
 
 	--If 1, gets the full stored procedure or running batch, when available
 	--If 0, gets only the actual statement that is currently running in the batch or procedure
@@ -54,7 +54,7 @@ DECLARE
 	@get_plans TINYINT = 0,
 
 	--Get the associated outer ad hoc query or stored procedure call, if available
-	@get_outer_command BIT = 1,
+	@get_outer_command BIT = 0,
 
 	--Enables pulling transaction log write info and transaction duration
 	@get_transaction_info BIT = 0,
@@ -89,7 +89,7 @@ DECLARE
 	--Walk the blocking chain and count the number of 
 	--total SPIDs blocked all the way down by a given session
 	--Also enables task_info Level 1, if @get_task_info is set to 0
-	@find_block_leaders BIT = 0,
+	@find_block_leaders BIT = 1,
 
 	--Pull deltas on various metrics
 	--Interval in seconds to wait before doing the second data pull
