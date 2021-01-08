@@ -40,7 +40,7 @@ UNION ALL
 SELECT	'-- [-- DB ROLES --] --' AS [-- SQL STATEMENTS --]
 		,5 AS [-- RESULT ORDER HOLDER --]
 UNION ALL
-SELECT	'ALTER SERVER ROLE ' + QUOTENAME(USER_NAME(rm.[role_principal_id])) + ' ADD MEMBER ' + QUOTENAME(USER_NAME(rm.[member_principal_id])) + ';' AS [-- SQL STATEMENTS --]
+SELECT	'ALTER ROLE ' + QUOTENAME(USER_NAME(rm.[role_principal_id])) + ' ADD MEMBER ' + QUOTENAME(USER_NAME(rm.[member_principal_id])) + ';' AS [-- SQL STATEMENTS --]
 		,6 AS [-- RESULT ORDER HOLDER --]
 FROM	sys.database_role_members AS rm
 WHERE   USER_NAME(rm.[member_principal_id]) IN (  

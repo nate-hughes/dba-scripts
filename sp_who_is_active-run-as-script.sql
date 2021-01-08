@@ -1,7 +1,7 @@
 USE master
 GO
 
---IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_NAME = 'sp_WhoIsActive')
+--IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_NAME = 'sp	_WhoIsActive')
 --	EXEC ('CREATE PROC dbo.sp_WhoIsActive AS SELECT ''stub version, to be replaced''')
 --GO
 
@@ -11,7 +11,12 @@ Who Is Active? v11.17 (2016-10-18)
 
 Feedback: mailto:amachanic@gmail.com5
 Updates: http://whoisactive.com
-kill 369
+kill 385;
+kill 171;
+kill 389;
+kill 383;
+kill 492;
+kill 376;
 License: 
 	Who is Active? is free to download and use for personal, educational, and internal 
 	corporate purposes, provided that this header is preserved. Redistribution or sale 
@@ -28,7 +33,7 @@ DECLARE
 	--Session is a session ID, and either 0 or '' can be used to indicate "all" sessions
 	--All other filter types support % or _ as wildcards
 	@filter sysname = '', --kill 320
-	@filter_type VARCHAR(10) = 'login',
+	@filter_type VARCHAR(10) = 'session',
 	@not_filter sysname = '',
 	@not_filter_type VARCHAR(10) = 'session',
 
@@ -5171,5 +5176,8 @@ BEGIN;
 		@sql_n,
 		N'@schema VARCHAR(MAX) OUTPUT',
 		@schema OUTPUT;
+		
+	IF OBJECT_ID('tempdb..#sessions','U') IS NOT NULL
+		DROP TABLE #sessions;
 END;
 GO

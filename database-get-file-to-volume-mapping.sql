@@ -12,8 +12,10 @@ SELECT	DatabaseName = DB_NAME(f.database_id)
 									ELSE ''
 								END
 		, [Size] = CONVERT(NVARCHAR(15), CONVERT(BIGINT, f.size) * 8 / 1024) + N' MB'
-		, [MaxSize] = CASE f.max_size WHEN -1 THEN N'Unlimited' 
-										ELSE CONVERT(NVARCHAR(15), CONVERT(BIGINT, f.max_size) * 8 / 1024) + N' MB' 
+		, [MaxSize] = CASE f.max_size 
+							WHEN 0 THEN N'No growth allowed'
+							WHEN -1 THEN N'File will grow until disk is full'
+							ELSE CONVERT(NVARCHAR(15), CONVERT(BIGINT, f.max_size) * 8 / 1024) + N' MB' 
 						END
 		, [Growth] = CASE f.is_percent_growth WHEN 1 THEN CONVERT(NVARCHAR(15), f.growth) + N'%' 
 												ELSE CONVERT(NVARCHAR(15), CONVERT(BIGINT, f.growth) * 8 / 1024) + N' MB' 

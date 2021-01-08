@@ -1,9 +1,11 @@
 
-DECLARE @sql_indxinfo NVARCHAR(2000)
-		,@sql_indxsize NVARCHAR(2000)
+DECLARE @sql_indxinfo NVARCHAR(4000)
+		,@sql_indxsize NVARCHAR(4000)
 		,@Version VARCHAR(50) = LEFT(CAST(SERVERPROPERTY('ProductVersion') AS VARCHAR(128)),2)
 		,@IsHadrEnabled TINYINT = CONVERT(TINYINT,SERVERPROPERTY ('IsHadrEnabled'))
-		,@RoleDesc NVARCHAR(60) = 'PRIMARY';
+		,@RoleDesc NVARCHAR(60) = 'PRIMARY'
+		,@DBName NVARCHAR(128) = NULL
+;
 
 if OBJECT_ID('tempdb..#IndxInfo') is not null drop table #IndxInfo;
 create table #IndxInfo (
@@ -15,14 +17,14 @@ create table #IndxInfo (
 	,tablename VARCHAR(128) NOT NULL
 	,indexname VARCHAR(128) NULL
 	,indextype TINYINT NOT NULL
-	,columns VARCHAR(2000) NULL
-	,included_columns VARCHAR(2000) NULL
+	,columns VARCHAR(4000) NULL
+	,included_columns VARCHAR(4000) NULL
 	,is_unique BIT NOT NULL
 	,is_primary_key BIT NOT NULL
 	,is_unique_constraint BIT NOT NULL
 	,is_disabled BIT NOT NULL
 	,has_filter BIT NOT NULL
-	,filter_definition VARCHAR(2000) NULL
+	,filter_definition VARCHAR(4000) NULL
 	,auto_created BIT NULL
 	,fill_factor TINYINT NOT NULL
 	,is_padded BIT NOT NULL
@@ -51,8 +53,12 @@ create table #IndxSize (
 	,data_compression TINYINT NOT NULL
 );
 
-SET @sql_indxinfo = N'USE [?];
-IF DB_ID() > 4
+SET @sql_indxinfo = N'USE [?]; '
+IF @DBName IS NULL
+	SET @sql_indxinfo += N'IF DB_ID() > 4 BEGIN ';
+ELSE
+	SET @sql_indxinfo += N'IF DB_NAME() = ''' + @DBName + ''' BEGIN ';
+SET @sql_indxinfo += N'
 INSERT #IndxInfo
 SELECT	DB_ID()
 		,i.object_id
@@ -106,10 +112,15 @@ SELECT	DB_ID()
 FROM	sys.objects o
 		JOIN sys.indexes i ON o.object_id = i.object_id
 		LEFT JOIN sys.dm_db_index_usage_stats u ON i.object_id = u.object_id and i.index_id = u.index_id and u.database_id = DB_ID()
-WHERE	OBJECTPROPERTY(o.object_id,''IsUserTable'') = 1;'
+WHERE	OBJECTPROPERTY(o.object_id,''IsUserTable'') = 1;
+END;'
 
-SET @sql_indxsize = N'USE [?];
-IF DB_ID() > 4
+SET @sql_indxsize = N'USE [?]; '
+IF @DBName IS NULL
+	SET @sql_indxsize += N'IF DB_ID() > 4 BEGIN ';
+ELSE
+	SET @sql_indxsize += N'IF DB_NAME() = ''' + @DBName + ''' BEGIN ';
+SET @sql_indxsize += N'
 INSERT #IndxSize
 SELECT	DB_ID()
 		,i.object_id
@@ -137,8 +148,9 @@ FROM	sys.indexes i
 WHERE	OBJECTPROPERTY(i.object_id,''IsUserTable'') = 1
 GROUP BY i.object_id
 		,i.index_id
-		,p.data_compression;'
-		
+		,p.data_compression;
+END;'
+
 IF @IsHadrEnabled = 0
 OR (
 	@IsHadrEnabled = 1
@@ -194,4 +206,8 @@ FROM	#IndxInfo i
 			ON s.databaseid = i.databaseid
 			AND s.objectid = i.objectid
 			AND s.indexid = i.indexid
-WHERE	i.databaseid > 4;
+WHERE	i.databaseid > 4
+ORDER BY i.databasename
+		,i.schemaname
+		,i.tablename
+		,i.indextype;

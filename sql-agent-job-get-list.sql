@@ -9,6 +9,8 @@ DECLARE @LastModDate DATETIME --= '11/1/2016'
 
 SELECT	SERVERPROPERTY ('ServerName') as [Server]
 		, msdb.dbo.sysjobs.name as [Job]
+		, msdb.dbo.syscategories.name as [Category]
+		, msdb.sys.syslogins.name as [Owner]
 		, [JobSteps] = stepcount
 		, [Enabled] = CASE msdb.dbo.sysjobs.[enabled] WHEN 1 THEN 'Y' ELSE 'N' END 
 		, [StartStepId] = msdb.dbo.sysjobs.start_step_id
@@ -253,6 +255,8 @@ FROM	msdb.dbo.sysjobs
 			--WHERE	subsystem = 'TSQL'
 			GROUP BY job_id
 		) l ON l.job_id = sysjobs.job_id
+		JOIN msdb.sys.syslogins ON msdb.sys.syslogins.sid = msdb.dbo.sysjobs.owner_sid
+		LEFT JOIN msdb.dbo.syscategories ON msdb.dbo.syscategories.category_id = msdb.dbo.sysjobs.category_id
 WHERE	msdb.dbo.sysjobs.date_modified >= ISNULL(@LastModDate,msdb.dbo.sysjobs.date_modified)
 ORDER BY msdb.dbo.sysjobs.name
 		, msdb.dbo.sysschedules.freq_type
