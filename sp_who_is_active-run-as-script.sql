@@ -11,7 +11,7 @@ Who Is Active? v11.17 (2016-10-18)
 
 Feedback: mailto:amachanic@gmail.com5
 Updates: http://whoisactive.com
-kill 385;
+kill 375;
 kill 171;
 kill 389;
 kill 383;

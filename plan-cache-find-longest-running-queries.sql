@@ -1,5 +1,5 @@
 /* Execution plan cache */
-SELECT	TOP (10)
+SELECT	TOP (1000)
 		sqltext.text AS query
 		,querystats.execution_count
 		,querystats.max_elapsed_time
@@ -14,3 +14,7 @@ FROM	sys.dm_exec_query_stats as querystats
 ORDER BY querystats.max_elapsed_time DESC
 OPTION (RECOMPILE);
 GO
+
+select * from sys.dm_exec_query_stats
+where query_hash =  0x98714BE4E5BE6716
+or query_plan_hash = 0x98714BE4E5BE6716
