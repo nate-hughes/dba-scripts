@@ -1,6 +1,7 @@
 DECLARE	@sql VARCHAR(2048)
 		,@sort INT
-		,@login VARCHAR(128) = NULL;
+		,@login VARCHAR(128) = 'src_login'
+		,@login_mirror VARCHAR(128) = 'tgt_login';
 
 DECLARE tmp CURSOR FOR
 
@@ -23,7 +24,7 @@ UNION ALL
 SELECT	'-- [-- DB USERS --] --' AS [-- SQL STATEMENTS --]
 		,3 AS [-- RESULT ORDER HOLDER --]
 UNION ALL
-SELECT  'IF NOT EXISTS (SELECT [name] FROM sys.database_principals WHERE [name] =' + SPACE(1) + '''' + [name] + '''' + ') BEGIN CREATE USER ' + SPACE(1) + QUOTENAME([name]) + ' FOR LOGIN ' + QUOTENAME([name]) + ' WITH DEFAULT_SCHEMA = ' + QUOTENAME([default_schema_name]) + SPACE(1) + 'END;' AS [-- SQL STATEMENTS --]
+SELECT  'IF NOT EXISTS (SELECT [name] FROM sys.database_principals WHERE [name] =' + SPACE(1) + '''' + ISNULL(@login_mirror,[name]) + '''' + ') BEGIN CREATE USER ' + SPACE(1) + QUOTENAME(ISNULL(@login_mirror,[name])) + ' FOR LOGIN ' + QUOTENAME(ISNULL(@login_mirror,[name])) + ' WITH DEFAULT_SCHEMA = ' + QUOTENAME([default_schema_name]) + SPACE(1) + 'END;' AS [-- SQL STATEMENTS --]
 		,3 AS [-- RESULT ORDER HOLDER --]
 FROM    sys.database_principals
 WHERE	[type] IN ('U', 'S', 'G') -- windows users, sql users, windows groups
@@ -40,7 +41,7 @@ UNION ALL
 SELECT	'-- [-- DB ROLES --] --' AS [-- SQL STATEMENTS --]
 		,5 AS [-- RESULT ORDER HOLDER --]
 UNION ALL
-SELECT	'ALTER ROLE ' + QUOTENAME(USER_NAME(rm.[role_principal_id])) + ' ADD MEMBER ' + QUOTENAME(USER_NAME(rm.[member_principal_id])) + ';' AS [-- SQL STATEMENTS --]
+SELECT	'ALTER ROLE ' + QUOTENAME(USER_NAME(rm.[role_principal_id])) + ' ADD MEMBER ' + QUOTENAME(ISNULL(@login_mirror,USER_NAME(rm.[member_principal_id]))) + ';' AS [-- SQL STATEMENTS --]
 		,6 AS [-- RESULT ORDER HOLDER --]
 FROM	sys.database_role_members AS rm
 WHERE   USER_NAME(rm.[member_principal_id]) IN (  
@@ -71,7 +72,7 @@ SELECT	CASE
 			WHEN c.[column_id] IS NULL THEN SPACE(0)
 			ELSE '(' + QUOTENAME(c.[name]) + ')'
 		END
-        + SPACE(1) + 'TO' + SPACE(1) + QUOTENAME(USER_NAME(dp.[principal_id])) COLLATE DATABASE_DEFAULT
+        + SPACE(1) + 'TO' + SPACE(1) + QUOTENAME(ISNULL(@login_mirror,USER_NAME(dp.[principal_id]))) COLLATE DATABASE_DEFAULT
 		+ CASE 
 			WHEN p.[state] <> 'W' THEN SPACE(0)
 			ELSE SPACE(1) + 'WITH GRANT OPTION'
@@ -101,7 +102,7 @@ SELECT	CASE
 			ELSE 'GRANT'
 		END
 		+ SPACE(1) + p.[permission_name]
-		+ SPACE(1) + 'TO' + SPACE(1) + '[' + USER_NAME(dp.[principal_id]) + ']' COLLATE DATABASE_DEFAULT
+		+ SPACE(1) + 'TO' + SPACE(1) + '[' + ISNULL(@login_mirror,USER_NAME(dp.[principal_id])) + ']' COLLATE DATABASE_DEFAULT
 		+ CASE 
 			WHEN p.[state] <> 'W' THEN SPACE(0) 
 			ELSE SPACE(1) + 'WITH GRANT OPTION' 
@@ -132,7 +133,7 @@ SELECT	CASE
 		+ SPACE(1) + p.[permission_name]
 		+ SPACE(1) + 'ON' + SPACE(1) + p.[class_desc] + '::' COLLATE DATABASE_DEFAULT
 		+ QUOTENAME(SCHEMA_NAME(p.[major_id]))
-		+ SPACE(1) + 'TO' + SPACE(1) + QUOTENAME(USER_NAME(p.[grantee_principal_id])) COLLATE DATABASE_DEFAULT
+		+ SPACE(1) + 'TO' + SPACE(1) + QUOTENAME(ISNULL(@login_mirror,USER_NAME(p.[grantee_principal_id]))) COLLATE DATABASE_DEFAULT
 		+ CASE
 			WHEN p.[state] <> 'W' THEN SPACE(0)
 			ELSE SPACE(1) + 'WITH GRANT OPTION'

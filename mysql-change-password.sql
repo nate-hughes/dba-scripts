@@ -1,0 +1,1 @@
+ALTER USER 'user'@'%' IDENTIFIED BY 'new_pwd';

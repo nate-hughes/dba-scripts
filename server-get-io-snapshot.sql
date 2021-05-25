@@ -91,8 +91,8 @@ FROM	[DiffLatencies] AS [vfs]
 		JOIN sys.master_files AS [mf]
 			ON [vfs].[database_id] = [mf].[database_id]
 			AND [vfs].[file_id] = [mf].[file_id]
---ORDER BY [ReadLatency(ms)] DESC;
-ORDER BY [WriteLatency(ms)] DESC;
+ORDER BY [ReadLatency(ms)] DESC;
+--ORDER BY [WriteLatency(ms)] DESC;
 GO
 
 -- Cleanup

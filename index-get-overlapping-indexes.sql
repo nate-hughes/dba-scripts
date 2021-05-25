@@ -124,7 +124,7 @@ EXEC sp_executesql @loadIndexSQL;
 -----------
 --SELECT 'Listing Possible Redundant Index keys' AS [Comments];
  
-SELECT DISTINCT i.TableName, i.IndexName,i.IndexType, i.ConstraintType, i.AllColName, i.IndexSizeKB, i.HasFilter, i.HasIncludedColumn
+SELECT DISTINCT i.SchemaName, i.TableName, i.IndexName,i.IndexType, i.ConstraintType, i.AllColName, i.IndexSizeKB, i.HasFilter, i.HasIncludedColumn
    FROM #AllIndexes AS i
    JOIN #AllIndexes AS i2 ON i.TableID = i2.TableID
       AND i.ColName1 = i2.ColName1

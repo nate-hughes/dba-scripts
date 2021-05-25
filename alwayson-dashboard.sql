@@ -84,6 +84,10 @@ BEGIN
 				WHEN 1 THEN 0 
 				ELSE ISNULL(DATEDIFF([ss], [dbr].[last_commit_time], [dbrp].[last_commit_time]), 0) 
 			END                                            AS [EstimatedDataLoss_(Seconds)] 
+		   ,CASE [dbcs].[is_failover_ready] 
+				WHEN 1 THEN '00:00:00:000' 
+				ELSE CONVERT(varchar, DATEADD(ms, ISNULL(DATEDIFF([ss], [dbr].[last_commit_time], [dbrp].[last_commit_time]), 0)  * 1000, 0), 114)
+			END                                            AS [EstimatedDataLoss]
 		   ,ISNULL(CASE [dbr].[redo_rate] 
 				WHEN 0 THEN -1 
 				ELSE CAST([dbr].[redo_queue_size] AS FLOAT) / NULLIF([dbr].[redo_rate] ,0)

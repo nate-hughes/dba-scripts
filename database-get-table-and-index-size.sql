@@ -13,11 +13,15 @@ exec sp_spaceused 'ZipCode';
 exec sp_spaceused 'StatisticalArea_to_Zip';
 */
 
-DECLARE @l_DBId INT;
+DECLARE @l_DBId INT
+		,@l_TblName VARCHAR(128) = '[dbo].[FactLoanResponseAttribute]'
+		,@l_TblId INT;
 
 SET @l_DBId = DB_ID();
+SET @l_TblId = OBJECT_ID(@l_TblName);
 
 SELECT	TblId = o.object_id
+		, SchemaName = SCHEMA_NAME(o.schema_id)
 		, TblName = o.name
 		, IndxId = i.index_id
 		, IndxName = i.name
@@ -42,4 +46,5 @@ FROM	sys.objects o
 			ON i.data_space_id = d.data_space_id
 WHERE	o.type = 'U'
 AND		o.is_ms_shipped = 0
+AND		(@l_TblId IS NULL OR o.object_id = @l_TblId)
 ORDER BY  CONVERT(NUMERIC(9,1),CASE WHEN i.index_id IN(0,1) THEN a.data_pages END * @pgsz) + CONVERT(NUMERIC(9,1),ISNULL(CASE WHEN i.index_id > 1 THEN a.data_pages END,0) * @pgsz) desc

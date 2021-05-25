@@ -7,7 +7,7 @@ SELECT	TOP (1000)
 		,querystats.creation_time
 		,querystats.last_execution_time
 		,ISNULL(querystats.execution_count / 1000 / NULLIF(DATEDIFF(SECOND, querystats.creation_time, GETDATE()), 0), 0) AS freq_per_second
-		,CAST(query_plan AS XML) AS plan_xml
+		,TRY_CONVERT(XML, query_plan) AS plan_xml
 FROM	sys.dm_exec_query_stats as querystats
 		CROSS APPLY sys.dm_exec_text_query_plan (querystats.plan_handle, querystats.statement_start_offset, querystats.statement_end_offset) as textplan
 		CROSS APPLY sys.dm_exec_sql_text(querystats.sql_handle) AS sqltext 

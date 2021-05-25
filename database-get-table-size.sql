@@ -8,9 +8,12 @@ FROM	[master].dbo.spt_values
 WHERE	number = 1
 AND		type = 'E';
 
-DECLARE @l_DBId INT;
+DECLARE @l_DBId INT
+		,@l_TblId INT
+		,@l_Table VARCHAR(128) = 'schema.table';
 
 SET @l_DBId = DB_ID();
+SET @l_TblId = OBJECT_ID(@l_Table);
 
 SELECT	TblId = o.object_id
 		, TblName = o.name
@@ -29,6 +32,7 @@ FROM	sys.objects o
 			ON p.partition_id = a.container_id
 WHERE	o.type = 'U'
 AND		o.is_ms_shipped = 0
+AND		(o.object_id = @l_TblId OR @l_TblId IS NULL)
 GROUP BY o.object_id
 		, o.name
 ORDER BY 4 DESC

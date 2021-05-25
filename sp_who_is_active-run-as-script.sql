@@ -9,19 +9,14 @@ GO
 Who Is Active? v11.17 (2016-10-18)
 (C) 2007-2016, Adam Machanic
 
-Feedback: mailto:amachanic@gmail.com5
+Feedback: mailto:amachanic@gmail.com
 Updates: http://whoisactive.com
-kill 375;
-kill 171;
-kill 389;
-kill 383;
-kill 492;
-kill 376;
+
 License: 
 	Who is Active? is free to download and use for personal, educational, and internal 
 	corporate purposes, provided that this header is preserved. Redistribution or sale 
 	of Who is Active?, in whole or in part, is prohibited without the author's express 
-	written consent.
+	written consent. 
 *********************************************************************************************/
 --ALTER PROC dbo.sp_WhoIsActive
 --(
@@ -32,8 +27,8 @@ DECLARE
 	--Valid filter types are: session, program, database, login, and host
 	--Session is a session ID, and either 0 or '' can be used to indicate "all" sessions
 	--All other filter types support % or _ as wildcards
-	@filter sysname = '', --kill 320
-	@filter_type VARCHAR(10) = 'session',
+	@filter sysname = '', --kill 320 10.90.70.246
+	@filter_type VARCHAR(10) = 'login',
 	@not_filter sysname = '',
 	@not_filter_type VARCHAR(10) = 'session',
 

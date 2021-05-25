@@ -2,6 +2,8 @@ create table #key_tbls (DBName VARCHAR(100), KeyName VARCHAR(100));
 
 declare @sql nvarchar(max) = 'use [?]; insert #key_tbls (DBName, KeyName) select DB_NAME(), name from sys.symmetric_keys where name <> ''##MS_DatabaseMasterKey##'';'
 
+ select DB_NAME(), name from sys.symmetric_keys where name <> '##MS_DatabaseMasterKey##';
+
 exec sp_MSforeachdb @sql
 
 select DBName, KeyName
@@ -15,3 +17,7 @@ alter master key add encryption by service master key
 
 exec SystemConfiguration_GetValue 'ValidationKey'
 */
+
+
+ select * from sys.symmetric_keys
+ select * from sys.certificates
