@@ -10,9 +10,9 @@ SELECT  @ArchiveID   = 0
        ,@LogFileType = 1
        ,@Filter1Text = NULL
        ,@Filter2Text = NULL
-       ,@FirstEntry  = '2021-05-01 05:44:39'
-       ,@LastEntry   = '2021-05-02 06:38:59.080'
-       ,@SortOrder   = N'asc';
+       ,@FirstEntry  = CONVERT(DATE,GETDATE())
+       ,@LastEntry   = NULL
+       ,@SortOrder   = N'desc';
 
 EXEC master.sys.xp_readerrorlog @ArchiveID
                                ,@LogFileType
@@ -21,3 +21,4 @@ EXEC master.sys.xp_readerrorlog @ArchiveID
                                ,@FirstEntry
                                ,@LastEntry
                                ,@SortOrder;
+

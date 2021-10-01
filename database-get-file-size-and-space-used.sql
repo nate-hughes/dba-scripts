@@ -22,7 +22,7 @@ CREATE TABLE #DB_FILE_INFO (
 );
 
 DECLARE @l_sql NVARCHAR(4000)
-		,@l_DBName NVARCHAR(128) = 'mf_scratch'
+		,@l_DBName NVARCHAR(128) = NULL
 ;
 
 SET @l_sql =

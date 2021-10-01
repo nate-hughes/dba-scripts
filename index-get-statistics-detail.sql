@@ -1,26 +1,36 @@
 USE [DBName];
 
+DECLARE @TblName VARCHAR(128) = NULL;
+
 -- whats stats exist for the table
 --EXEC sp_helpstats @objname = 'User';
-SELECT	o.name AS TblName
+SELECT	SCHEMA_NAME(o.schema_id) AS SchemaName
+		,o.name AS TblName
+		,c.name AS ColName
 		,s.name AS StatName
+		,sp.last_updated
+		,DATEDIFF(DAY,sp.last_updated,GETDATE()) AS DaysOld
+		,sp.modification_counter -- Total number of modifications for the leading statistics column (the column on which the histogram is built) since the last time statistics were updated.
+		,s.auto_created
+		,s.user_created
+		,s.no_recompute
+		,s.object_id
 		,s.stats_id
 		,sc.stats_column_id
-		,c.name AS ColName
-		,s.auto_created
-		,s.filter_definition
-		,sp.last_updated
-		,sp.rows
-		,sp.rows_sampled
-		,sp.steps
-		,sp.modification_counter
+		,sc.column_id
+		,sp.rows			-- Total number of rows in the table or indexed view when statistics were last updated.
+		,sp.rows_sampled	-- Total number of rows sampled for statistics calculations.
+		,sp.steps			-- Number of steps in the histogram.
 FROM	sys.stats s
 		JOIN sys.stats_columns sc ON s.object_id = sc.object_id AND s.stats_id = sc.stats_id
 		JOIN sys.columns c ON sc.object_id = c.object_id AND sc.column_id = c.column_id
 		JOIN sys.objects o ON s.object_id = o.object_id
 		CROSS APPLY sys.dm_db_stats_properties (s.object_id, s.stats_id) sp
-WHERE	o.name = '[TblName]'
-ORDER BY o.name
+WHERE	(o.name = @TblName OR @TblName IS NULL)
+AND		OBJECTPROPERTY(s.OBJECT_ID,'IsUserTable') = 1
+AND		(s.auto_created = 1 OR s.user_created = 1)
+ORDER BY SchemaName
+		,o.name
 		,s.stats_id
 		,sc.stats_column_id;
 

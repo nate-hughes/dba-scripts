@@ -11,12 +11,13 @@
 -- to identify which database needs an index. Modified the 
 -- CreateIndexStatement to use the full table path and include the
 -- equality/inequality columns for easier identifcation.
+-- 20210930 - NEH - added [Rec Index Last Seek]
 ------------------------------------------------------------------ */
 SET NOCOUNT ON;
 
 DECLARE @DBId                INT          = DB_ID()
        ,@SchemaName          sysname
-       ,@TblName             sysname      = N'TblName'
+       ,@TblName             sysname      = N'dbo.DNS'
        ,@TblId               INT;
 
 SET @TblId = OBJECT_ID(@TblName);
@@ -28,6 +29,7 @@ SELECT  CONVERT(NUMERIC(19, 2), (migs.avg_total_user_cost * migs.avg_user_impact
        ,mid.inequality_columns -- table.column > constant_value
        ,mid.included_columns
        ,(migs.user_seeks + migs.user_scans)                                                                              AS [Rec Index Reads]
+       ,migs.last_user_seek																								 AS [Rec Index Last Seek]
        ,'CREATE NONCLUSTERED INDEX ix_' + o.name COLLATE DATABASE_DEFAULT + '_'
         + REPLACE(
                      REPLACE(

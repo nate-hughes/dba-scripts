@@ -12,7 +12,8 @@ SET @SQL =
 				,SCHEMA_NAME(obj.schema_id) AS SchemaName	
 				,sch.name AS TblName
 				,stat.name AS StatName
-				,sp.last_updated AS LastUpdDate
+				,sp.last_updated AS LastUpdated
+				,DATEDIFF(DAY,sp.last_updated,GETDATE()) AS DaysOld
 				,sp.modification_counter AS ModCounter
 				,'' UPDATE STATISTICS ['' + DB_NAME() + ''].['' + sch.name + ''].['' + obj.name + ''] ['' + stat.name + ''];'' AS UpdScript
 		FROM	sys.stats stat
