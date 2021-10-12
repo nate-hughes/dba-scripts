@@ -28,7 +28,7 @@ DECLARE
 	--Session is a session ID, and either 0 or '' can be used to indicate "all" sessions
 	--All other filter types support % or _ as wildcards
 	@filter sysname = '', --kill 320 10.90.70.246
-	@filter_type VARCHAR(10) = 'login',
+	@filter_type VARCHAR(10) = 'session',
 	@not_filter sysname = '',
 	@not_filter_type VARCHAR(10) = 'session',
 

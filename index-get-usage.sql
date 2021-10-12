@@ -1,4 +1,7 @@
 DECLARE	@TblName sysname = NULL--N'TblName'
+		,@TblId INT;
+
+SET @TblId = OBJECT_ID(@TblName);
 
 SELECT	SCHEMA_NAME(o.schema_id) AS [SCHEMA]
 		,o.name AS [TABLE]
@@ -13,10 +16,10 @@ FROM	SYS.INDEXES AS I
 			ON I.object_id = S.object_id
 			AND I.index_id = S.index_id
 			AND S.database_id = DB_ID()
-WHERE	o.name = @TblName
+WHERE	o.object_id = @TblId
 OR		(@TblName IS NULL
 		AND OBJECTPROPERTY(I.object_id,'IsUserTable') = 1)
 ORDER BY SCHEMA_NAME(o.schema_id)
 		,o.name
-		,i.index_id
+		,i.index_id;
 
