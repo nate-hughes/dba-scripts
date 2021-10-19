@@ -91,7 +91,7 @@ FROM	information_schema.STATISTICS
 WHERE	(@Database_NAME IS NULL OR TABLE_SCHEMA = @Database_NAME);
 
 -- Find Table Dependencies in FK Constraints
-SET @Database_NAME = 'electronic_payment';
+SET @Database_NAME = null;
 SET @Table_NAME = null;
 SELECT	Constraint_Type
 		,Constraint_Name
