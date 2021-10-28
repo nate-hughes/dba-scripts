@@ -2,9 +2,12 @@
 -- (C) Pinal Dave https://blog.sqlauthority.com/ ) 2016
 -- Send query result to pinal@sqlauthority.com for quick feedback
 SELECT	wait_type AS Wait_Type
-		,wait_time_ms / 1000.0 AS Wait_Time_Seconds
+		,TRY_CONVERT(INT, wait_time_ms / 1000.0) AS Wait_Time_Seconds                              -- Total time spent waiting in milliseconds.
+		,TRY_CONVERT(INT, signal_wait_time_ms / 1000.0) AS Signal_Wait_Time_Seconds                -- Total time spent waiting to get on the CPU, when no longer waiting on original cause of wait.
+		,TRY_CONVERT(INT, (wait_time_ms - signal_wait_time_ms) / 1000.0) AS Real_Wait_Time_Seconds -- Total time spent waiting on original resource.
 		,waiting_tasks_count AS Waiting_Tasks_Count
-		,wait_time_ms * 100.0 / SUM(wait_time_ms) OVER() AS Percentage_WaitTime
+		,TRY_CONVERT(DECIMAL(9,2),wait_time_ms * 100.0 / SUM(wait_time_ms) OVER()) AS Percentage_Wait_Time
+		,TRY_CONVERT(DECIMAL(9,2),(wait_time_ms - signal_wait_time_ms) * 100.0 / SUM(wait_time_ms) OVER()) AS Percentage_Real_Wait_Time
 FROM	sys.dm_os_wait_stats
 WHERE	wait_type NOT IN (
 			N'BROKER_EVENTHANDLER',

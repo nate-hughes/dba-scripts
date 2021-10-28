@@ -1,10 +1,23 @@
 DECLARE @SPID INT = <SPID>;
 
-SELECT	command
-		,percent_complete
-		,estimated_completion_time / 1000 AS estimated_completion_time_sec
-FROM	sys.dm_exec_requests
-WHERE	session_id = @SPID;
+SELECT	r.Command
+		,r.start_time AS [Start Time]
+		,r.percent_complete AS [% Complete]
+		, DATEDIFF(MINUTE, r.start_time, GETDATE()) AS [Age in Minutes]
+		,r.estimated_completion_time / 1000 AS [Est. Completion Time (s)]
+		,SUBSTRING (
+			st.text,(r.statement_start_offset/2) + 1
+			,((CASE
+				WHEN r.statement_end_offset = -1 THEN LEN(CONVERT(NVARCHAR(MAX), st.text)) * 2
+				ELSE r.statement_end_offset
+			END - r.statement_start_offset)/2) + 1
+		) AS [Query]
+		,st.Text AS [Parent Query]
+		,DB_NAME(r.database_id) AS [Database]
+		,r.Status
+FROM	sys.dm_exec_requests r
+		CROSS APPLY sys.dm_exec_sql_text (r.sql_handle) st
+WHERE	r.session_id = @SPID;
 
 SELECT   
        node_id,

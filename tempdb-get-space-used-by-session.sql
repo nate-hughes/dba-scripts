@@ -62,6 +62,7 @@ FROM    (
 	OUTER APPLY sys.dm_exec_sql_text(COALESCE(T1.sql_handle,T2.most_recent_sql_handle)) T
 	JOIN sys.dm_exec_sessions S ON s.session_id = COALESCE(T1.session_id, T2.session_id)
 WHERE	COALESCE(T1.[Net Allocation],0) + COALESCE(T2.[Net Allocation],0) > 0
+AND		COALESCE(T1.session_id, T2.session_id) > 50
 ORDER BY [Net Allocation] DESC;
 
 

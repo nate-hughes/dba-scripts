@@ -3,14 +3,15 @@ SELECT	SCHEMA_NAME(o.schema_id) AS [Schema Name]
 		, i.name AS [Index Name]
 		--, i.index_id AS [Index Id]
 		, i.type_desc AS [Index Type]
-		, s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads]
-		, s.user_updates AS [Total Writes]
+		, s.system_seeks + s.system_scans + s.system_lookups  AS [System Reads] -- statistics updates & index maintenance
+		, s.user_seeks + s.user_scans + s.user_lookups AS [User Reads]
+		, s.user_updates AS [User Writes]
 		, s.user_updates - (s.user_seeks + s.user_scans + s.user_lookups) AS [Difference]
 		, CASE
 			WHEN s.user_updates < 1 THEN 100
 			ELSE 1.00 * (s.user_seeks + s.user_scans + s.user_lookups) / s.user_updates
-		  END AS reads_per_write
-		, (SELECT SUM(p.rows) FROM sys.partitions p WHERE p.index_id = i.index_id AND i.object_id = p.object_id) AS [Rows]
+		  END AS [User Reads Per Write]
+		, (SELECT SUM(p.rows) FROM sys.partitions p WHERE p.index_id = i.index_id AND i.object_id = p.object_id) AS [Index Rows]
 		, CASE WHEN i.is_primary_key = 1 OR i.is_unique_constraint = 1 THEN
 				'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(s.[object_id])) + '.' + QUOTENAME(OBJECT_NAME(s.[object_id]))	+ ' DROP CONSTRAINT ' + QUOTENAME(i.name)
 			ELSE
@@ -28,6 +29,6 @@ AND		i.is_primary_key = 0
 AND		i.is_unique_constraint = 0
 AND		s.user_updates > (s.user_seeks + s.user_scans + s.user_lookups)
 ORDER BY [Difference] DESC
-	, [Total Writes] DESC
-	, [Total Reads] ASC
+	, [User Writes] DESC
+	, [User Reads] ASC
 OPTION (RECOMPILE);

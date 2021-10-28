@@ -2,6 +2,9 @@ SET NOCOUNT ON;
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 GO
 
+USE TempDb;
+GO
+
 DECLARE	@pgsz NUMERIC(19,10);
 
 SELECT	@pgsz = [low] * 0.0009765625 /*KB*/ * 0.0009765625 /*MB*/
@@ -46,3 +49,12 @@ SELECT	 row_number() over (order by type, file_id ),
 		TRY_CONVERT(VARCHAR(50),CONVERT(NUMERIC(4,1), (Size - SpaceUsed) * 1.0 / Size * 100)) as FileSizeUnusedPct,
 		physical_name
 FROM  @TempDbFiles
+
+
+ -- total space usage by object type
+SELECT	TRY_CONVERT(BIGINT, SUM (user_object_reserved_page_count) * (8.0/1024.0)) AS [User Objects (MB)]
+		,TRY_CONVERT(BIGINT, SUM (internal_object_reserved_page_count) * (8.0/1024.0)) AS [Internal Objects (MB)]
+		,TRY_CONVERT(BIGINT, SUM (version_store_reserved_page_count) * (8.0/1024.0)) AS [Version Store (MB)]
+		,TRY_CONVERT(BIGINT, SUM (mixed_extent_page_count)* (8.0/1024.0)) AS [Mixed Extent (MB)]
+		,TRY_CONVERT(BIGINT, SUM (unallocated_extent_page_count)* (8.0/1024.0)) AS [Unallocated (MB)]
+FROM	sys.dm_db_file_space_usage;
