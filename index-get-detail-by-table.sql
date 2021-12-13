@@ -4,7 +4,7 @@ GO
 
 DECLARE @DBId                INT          = DB_ID()
        ,@SchemaName          sysname
-       ,@TblName             sysname      = N'[dbo].[FactLoanResponseAttribute]'
+       ,@TblName             sysname      = N'[dbo].[ApplicationUnderwriting]'
        ,@TblId               INT
        ,@MinFragmentation    REAL         = 5.0 -- Defaulted to 5% as recommended by MS in BOL
        ,@MinPageCount        INT          = 1000 -- Defaulted to 1000 pages as recommended by MS in BOL
@@ -70,68 +70,68 @@ ORDER BY i.index_id
 OPTION (MAXDOP 2);
 /****** INDEX CATALOG BLOCK END ******/
 
-/****** INDEX SIZE BLOCK START ******/
-DECLARE @tmp_compression TABLE (
-    object_name                                    NVARCHAR(128)
-   ,schema_name                                    NVARCHAR(128)
-   ,index_id                                       INT          PRIMARY KEY CLUSTERED
-   ,partition_number                               INT
-   ,size_with_current_compression_setting          BIGINT
-   ,size_with_requested_compression_setting        BIGINT
-   ,sample_size_with_current_compression_setting   BIGINT
-   ,sample_size_with_requested_compression_setting BIGINT
-);
+--/****** INDEX SIZE BLOCK START ******/
+--DECLARE @tmp_compression TABLE (
+--    object_name                                    NVARCHAR(128)
+--   ,schema_name                                    NVARCHAR(128)
+--   ,index_id                                       INT          PRIMARY KEY CLUSTERED
+--   ,partition_number                               INT
+--   ,size_with_current_compression_setting          BIGINT
+--   ,size_with_requested_compression_setting        BIGINT
+--   ,sample_size_with_current_compression_setting   BIGINT
+--   ,sample_size_with_requested_compression_setting BIGINT
+--);
 
-IF @EstimateCompression = 1
-    INSERT INTO @tmp_compression (
-        object_name
-		,schema_name
-		,index_id
-		,partition_number
-		,size_with_current_compression_setting
-		,size_with_requested_compression_setting
-		,sample_size_with_current_compression_setting
-		,sample_size_with_requested_compression_setting
-    )
-    EXEC sys.sp_estimate_data_compression_savings
-		@schema_name = @SchemaName
-		,@object_name = @TblName
-		,@index_id = NULL
-		,@partition_number = NULL
-		,@data_compression = @CompressionType;
+--IF @EstimateCompression = 1
+--    INSERT INTO @tmp_compression (
+--        object_name
+--		,schema_name
+--		,index_id
+--		,partition_number
+--		,size_with_current_compression_setting
+--		,size_with_requested_compression_setting
+--		,sample_size_with_current_compression_setting
+--		,sample_size_with_requested_compression_setting
+--    )
+--    EXEC sys.sp_estimate_data_compression_savings
+--		@schema_name = @SchemaName
+--		,@object_name = @TblName
+--		,@index_id = NULL
+--		,@partition_number = NULL
+--		,@data_compression = @CompressionType;
 
-SELECT  'SIZE:' AS Info;
-SELECT  '[' + DB_NAME() + '].[' + OBJECT_SCHEMA_NAME(@TblId, @DBId) + '].[' + OBJECT_NAME(@TblId, @DBId) + ']' AS Object
-       ,i.name                                                                                                 AS [Index]
-       ,i.type_desc                                                                                            AS [Index Type]
-	   ,ps.alloc_unit_type_desc                                                                                AS [Allocation Type]
-       ,CONVERT(NUMERIC(9, 2), ps.page_count * 8 * /*convert to MB*/ 0.000976562)                              AS [Index Size (MB)]
-       ,ps.page_count                                                                                          AS Pages
-       ,CONVERT(NUMERIC(5, 2), ps.avg_page_space_used_in_percent)                                              AS [Avg Page Space Used (%)]
-       ,ps.record_count                                                                                        AS Records
-       ,ps.avg_record_size_in_bytes                                                                            AS [Avg Record Size (bytes)]
-       ,ps.compressed_page_count                                                                               AS [Compressed Pages]
-       ,CONVERT(NUMERIC(5, 2), tmp.size_with_requested_compression_setting * /*convert to MB*/ 0.000976562)    AS [Est Compressed Size (MB)]
-       ,'ALTER INDEX [' + i.name + +'] ON ' + '[' + OBJECT_SCHEMA_NAME(@TblId, @DBId) + '].['
-        + OBJECT_NAME(@TblId, @DBId) + ']' + ' REBUILD WITH ( FILLFACTOR = '
-        + CONVERT(   CHAR(3), CASE WHEN i.fill_factor = 0 THEN 100
-                                   ELSE i.fill_factor
-                              END
-                 ) + ', ONLINE=ON, SORT_IN_TEMPDB=ON );' + ' UPDATE STATISTICS [' + OBJECT_SCHEMA_NAME(@TblId, @DBId)
-        + '].[' + OBJECT_NAME(@TblId, @DBId) + '] [' + i.name + +'];'                                          AS [Rebuild Script]
-FROM    sys.dm_db_index_physical_stats(@DBId, @TblId, NULL, NULL, 'SAMPLED') AS ps
-        INNER JOIN sys.indexes                                               i
-            ON  ps.object_id = i.object_id
-            AND ps.index_id = i.index_id
-        LEFT OUTER JOIN @tmp_compression                                     tmp
-            ON i.index_id = tmp.index_id
-WHERE   i.object_id = @TblId
-AND     i.is_disabled = 0
-AND     i.is_hypothetical = 0
-ORDER BY i.index_id
-        ,i.name
-OPTION (MAXDOP 2);
-/****** INDEX SIZE BLOCK END ******/
+--SELECT  'SIZE:' AS Info;
+--SELECT  '[' + DB_NAME() + '].[' + OBJECT_SCHEMA_NAME(@TblId, @DBId) + '].[' + OBJECT_NAME(@TblId, @DBId) + ']' AS Object
+--       ,i.name                                                                                                 AS [Index]
+--       ,i.type_desc                                                                                            AS [Index Type]
+--	   ,ps.alloc_unit_type_desc                                                                                AS [Allocation Type]
+--       ,CONVERT(NUMERIC(9, 2), ps.page_count * 8 * /*convert to MB*/ 0.000976562)                              AS [Index Size (MB)]
+--       ,ps.page_count                                                                                          AS Pages
+--       ,CONVERT(NUMERIC(5, 2), ps.avg_page_space_used_in_percent)                                              AS [Avg Page Space Used (%)]
+--       ,ps.record_count                                                                                        AS Records
+--       ,ps.avg_record_size_in_bytes                                                                            AS [Avg Record Size (bytes)]
+--       ,ps.compressed_page_count                                                                               AS [Compressed Pages]
+--       ,CONVERT(NUMERIC(5, 2), tmp.size_with_requested_compression_setting * /*convert to MB*/ 0.000976562)    AS [Est Compressed Size (MB)]
+--       ,'ALTER INDEX [' + i.name + +'] ON ' + '[' + OBJECT_SCHEMA_NAME(@TblId, @DBId) + '].['
+--        + OBJECT_NAME(@TblId, @DBId) + ']' + ' REBUILD WITH ( FILLFACTOR = '
+--        + CONVERT(   CHAR(3), CASE WHEN i.fill_factor = 0 THEN 100
+--                                   ELSE i.fill_factor
+--                              END
+--                 ) + ', ONLINE=ON, SORT_IN_TEMPDB=ON );' + ' UPDATE STATISTICS [' + OBJECT_SCHEMA_NAME(@TblId, @DBId)
+--        + '].[' + OBJECT_NAME(@TblId, @DBId) + '] [' + i.name + +'];'                                          AS [Rebuild Script]
+--FROM    sys.dm_db_index_physical_stats(@DBId, @TblId, NULL, NULL, 'SAMPLED') AS ps
+--        INNER JOIN sys.indexes                                               i
+--            ON  ps.object_id = i.object_id
+--            AND ps.index_id = i.index_id
+--        LEFT OUTER JOIN @tmp_compression                                     tmp
+--            ON i.index_id = tmp.index_id
+--WHERE   i.object_id = @TblId
+--AND     i.is_disabled = 0
+--AND     i.is_hypothetical = 0
+--ORDER BY i.index_id
+--        ,i.name
+--OPTION (MAXDOP 2);
+--/****** INDEX SIZE BLOCK END ******/
 
 /****** POSSIBLE MISSING INDEXES BLOCK START ******/
 SELECT  'POSSIBLE MISSING (since last restart):' AS Info;

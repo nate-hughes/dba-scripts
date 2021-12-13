@@ -1,6 +1,12 @@
 -- SQL Wait Stats and Queies
 -- (C) Pinal Dave https://blog.sqlauthority.com/ ) 2016
 -- Send query result to pinal@sqlauthority.com for quick feedback
+
+/* RED FLAGS
+Memory: RESOURCE_SEMAPHORE, RESOURCE_SEMAPHORE_QUERY_COMPILE, PAGEIOLATCH_SH, PAGEIOLATCH_EX
+
+*/
+
 SELECT	wait_type AS Wait_Type
 		,TRY_CONVERT(INT, wait_time_ms / 1000.0) AS Wait_Time_Seconds                              -- Total time spent waiting in milliseconds.
 		,TRY_CONVERT(INT, signal_wait_time_ms / 1000.0) AS Signal_Wait_Time_Seconds                -- Total time spent waiting to get on the CPU, when no longer waiting on original cause of wait.
