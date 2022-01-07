@@ -1,43 +1,18 @@
-IF EXISTS (
-	SELECT	1 
-	FROM	tempdb.sys.objects
-	WHERE	[type] = 'U'
-	AND		[object_id] = OBJECT_ID(N'tempdb..#LogInfo')
-)
-	DROP TABLE #LogInfo;
-	
-DECLARE @l_sql NVARCHAR(4000);
+/*
+Important change to VLF creation algorithm in SQL Server 2014
+https://www.sqlskills.com/blogs/paul/important-change-vlf-creation-algorithm-sql-server-2014/
+*/
 
-CREATE TABLE #LogInfo (
-	DatabaseName NVARCHAR(128) DEFAULT DB_NAME()
-	, RecoveryUnitId INT
-	, FileId INT
-	, FileSize BIGINT
-	, StartOffset BIGINT
-	, FSeqNo INT
-	, [Status] TINYINT
-	, Parity TINYINT
-	, CreateLSN NUMERIC(25,0)
-);
+SELECT	[name] AS 'Database Name'
+		,COUNT(l.database_id) AS 'VLF Count'
+		,SUM(vlf_size_mb) AS 'VLF Size (MB)'
+		,SUM(CAST(vlf_active AS INT)) AS 'Active VLF'
+		,SUM(vlf_active*vlf_size_mb) AS 'Active VLF Size (MB)'
+		,COUNT(l.database_id)-SUM(CAST(vlf_active AS INT)) AS 'In-active VLF'
+		,SUM(vlf_size_mb)-SUM(vlf_active*vlf_size_mb) AS 'In-active VLF Size (MB)'
+FROM	sys.databases s
+		CROSS APPLY sys.dm_db_log_info(s.database_id) l
+GROUP BY [name]
+ORDER BY [name];
+GO
 
-SET @l_sql = 
-'USE [?];
-INSERT INTO #LogInfo (
-	RecoveryUnitId
-	, FileId
-	, FileSize
-	, StartOffset
-	, FSeqNo
-	, Status
-	, Parity
-	, CreateLSN
-)
-EXEC(''DBCC LOGINFO'')';
-
-EXEC sp_msforeachdb @l_sql;
-
-SELECT	DBName = DatabaseName
-		, VLFs = COUNT(FileId)
-FROM	#LogInfo
-GROUP BY DatabaseName
-ORDER BY DatabaseName;

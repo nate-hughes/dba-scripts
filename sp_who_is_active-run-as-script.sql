@@ -21,7 +21,7 @@ Docs: http://whoisactive.com
 License:
     https://github.com/amachanic/sp_whoisactive/blob/master/LICENSE
 *********************************************************************************************/
---ALTER PROC dbo.sp_WhoIsActive
+--ALTER PROC dbo.sp_WhoIsActive -- kill 258 with statusonly
 DECLARE
 --(
 --~
@@ -5493,4 +5493,7 @@ BEGIN;
         N'@num_data_threshold MONEY, @schema VARCHAR(MAX) OUTPUT',
         @num_data_threshold, @schema OUTPUT;
 END;
+
+DROP TABLE IF EXISTS #sessions;
+
 GO

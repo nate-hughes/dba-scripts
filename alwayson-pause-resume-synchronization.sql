@@ -25,6 +25,7 @@ Primary database:	The primary database stops data movement to every connected se
 SELECT  database_name
        ,'ALTER DATABASE ' + database_name + ' SET HADR SUSPEND;' AS PauseStmt
        ,'ALTER DATABASE ' + database_name + ' SET HADR RESUME;'  AS ResumeStmt
-FROM    sys.availability_databases_cluster;
+FROM    sys.availability_databases_cluster
+ORDER BY database_name;
 GO
 
