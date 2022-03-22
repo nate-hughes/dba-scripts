@@ -8,13 +8,8 @@ FROM	[master].dbo.spt_values
 WHERE	number = 1
 AND		type = 'E';
 
-/*
-exec sp_spaceused 'ZipCode';
-exec sp_spaceused 'StatisticalArea_to_Zip';
-*/
-
 DECLARE @l_DBId INT
-		,@l_TblName VARCHAR(128) = '[dbo].[FactLoanResponseAttribute]'
+		,@l_TblName VARCHAR(128) = 'dbo.table_name'
 		,@l_TblId INT;
 
 SET @l_DBId = DB_ID();

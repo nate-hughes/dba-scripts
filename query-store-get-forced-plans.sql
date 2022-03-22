@@ -12,6 +12,7 @@ CREATE TABLE #query_store (
 	,query_id BIGINT
 	,query_plan_hash BINARY(8)
 	,query_plan XML
+	,last_execution_date DATE
 	,is_forced_plan BIT
 	,is_natively_compiled BIT
 	,force_failure_count BIGINT
@@ -27,6 +28,7 @@ INSERT #query_store (
 	,query_id
 	,query_plan_hash
 	,query_plan
+	,last_execution_date
 	,is_forced_plan
 	,is_natively_compiled
 	,force_failure_count
@@ -38,6 +40,7 @@ SELECT qsqt.query_sql_text,
 	   qsq.query_id,
        qsp.query_plan_hash,
        CAST(qsp.query_plan AS XML) AS query_plan,
+	   qsq.last_execution_time,
        qsp.is_forced_plan,
        qsp.is_natively_compiled,
        qsp.force_failure_count,
@@ -69,9 +72,12 @@ SELECT	@@SERVERNAME AS servername
 		,query_id
 		,CONVERT(VARCHAR(48),query_plan_hash,2) AS query_plan_hash
 		,query_plan
+		,last_execution_date
 		,is_forced_plan
 		,is_natively_compiled
 		,force_failure_count
 		,last_force_failure_reason_desc
 		,plan_forcing_type_desc
 FROM	#query_store;
+
+DROP TABLE IF EXISTS #query_store;

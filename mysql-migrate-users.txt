@@ -1,0 +1,32 @@
+-- First run this to get a list of queries to generate the create users
+select Distinct CONCAT('show create user `', user, '`@`', host, '`;') as query from mysql.user;
+
+-- output will look like this...
+show create user `some-service`@`%`;
+show create user `user.name`@`%`;
+
+-- you can then run these statements to get the actual create user scripts. They will look like this...
+CREATE USER 'some-service'@'%' IDENTIFIED WITH 'mysql_native_password' AS '*6E1597AC628B19C8B6DFEA0CE6064F822B318192' REQUIRE NONE PASSWORD EXPIRE DEFAULT ACCOUNT UNLOCK
+CREATE USER 'user.name'@'%' IDENTIFIED WITH 'mysql_native_password' AS '*B2253D683FBAC7BA6A1208747980B961F72A5582' REQUIRE NONE PASSWORD EXPIRE DEFAULT ACCOUNT UNLOCK
+
+-- if "show create user" is unavailable, use this statement to generate the create users
+SELECT	distinct CONCAT( 'CREATE USER \'', User, '\'@\'', Host, '\' IDENTIFIED WITH ''mysql_native_password'' AS \'', password, '\'\;' ) AS User 
+FROM	mysql.user ;
+
+-- you can then run these statements to get the actual create user scripts. They will look like this...
+CREATE USER 'user.name'@'%' IDENTIFIED WITH 'mysql_native_password' AS '*B2253D683FBAC7BA6A1208747980B961F72A5582';
+
+-- next get the show grants scripts by running
+select Distinct CONCAT('show grants for `', user, '`@`', host, '`;') as query from mysql.user;
+
+-- this will give you statements that look like
+show grants for `some-service`@`%`;
+show grants for `user.name`@`%`;
+
+-- now run these to get the grants scripts for each user. You'll have to add a semicolon at the end of each line
+-- [Grants for user.name@%]
+GRANT USAGE ON *.* TO 'user.name'@'%';
+GRANT SELECT ON `schema1`.* TO 'user.name'@'%';
+GRANT SELECT ON `schema2`.* TO 'user.name'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON `schema3`.* TO 'user.name'@'%';
+
