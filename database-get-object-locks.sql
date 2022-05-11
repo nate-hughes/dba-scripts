@@ -1,8 +1,15 @@
 
-SELECT *
-FROM sys.dm_tran_locks
-WHERE resource_database_id = DB_ID()
-AND resource_associated_entity_id = OBJECT_ID(N'schema.table');
+DECLARE	@find_replication_blocker BIT = 1
+		,@database_name SYSNAME = DB_NAME()
+		,@session_id INT;
+
+IF @find_replication_blocker = 1
+	SELECT	@session_id = session_id
+	FROM	sys.dm_exec_requests
+	WHERE	command = 'DB STARTUP'
+	AND		db_name(database_id) = @database_name;
+ELSE
+	SET @session_id = @@SPID;
 
  -- List all Locks of the Current Database 
 SELECT TL.resource_type AS ResType 
@@ -38,11 +45,12 @@ FROM sys.dm_tran_locks AS TL
          ON PAR.object_id = PARIDX.object_id 
             AND PAR.index_id = PARIDX.index_id 
 WHERE TL.resource_database_id  = DB_ID() 
-      AND ES.session_id <> @@Spid -- Exclude "my" session 
-      -- optional filter  
-      --AND TL.request_mode <> 'S' -- Exclude simple shared locks 
-	  AND TL.resource_associated_entity_id = OBJECT_ID(N'schema.table')
-ORDER BY TL.resource_type 
+AND	ES.session_id <> @session_id -- Exclude "my" OR AlwaysOn replication session 
+-- optional filter  
+--AND TL.request_mode <> 'S' -- Exclude simple shared locks 
+--AND TL.resource_associated_entity_id = OBJECT_ID(N'schema.table')
+ORDER BY S_Id
+		,TL.resource_type 
         ,TL.request_mode 
         ,TL.request_type 
         ,TL.request_status 
