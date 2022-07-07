@@ -9,7 +9,7 @@ WHERE	number = 1
 AND		type = 'E';
 
 DECLARE @l_DBId INT
-		,@l_TblName VARCHAR(128) = 'dbo.table_name'
+		,@l_TblName VARCHAR(128) = NULL
 		,@l_TblId INT;
 
 SET @l_DBId = DB_ID();
@@ -42,4 +42,4 @@ FROM	sys.objects o
 WHERE	o.type = 'U'
 AND		o.is_ms_shipped = 0
 AND		(@l_TblId IS NULL OR o.object_id = @l_TblId)
-ORDER BY  CONVERT(NUMERIC(9,1),CASE WHEN i.index_id IN(0,1) THEN a.data_pages END * @pgsz) + CONVERT(NUMERIC(9,1),ISNULL(CASE WHEN i.index_id > 1 THEN a.data_pages END,0) * @pgsz) desc
+ORDER BY  CONVERT(NUMERIC(9,1),a.total_pages * @pgsz) desc

@@ -1,10 +1,11 @@
-DECLARE @SPID INT = <SPID>;
+DECLARE @SPID INT = 66;
 
 SELECT	r.Command
 		,r.start_time AS [Start Time]
 		,r.percent_complete AS [% Complete]
 		, DATEDIFF(MINUTE, r.start_time, GETDATE()) AS [Age in Minutes]
 		,r.estimated_completion_time / 1000 AS [Est. Completion Time (s)]
+		,r.estimated_completion_time / 1000 / 60 AS [Est. Completion Time (m)]
 		,SUBSTRING (
 			st.text,(r.statement_start_offset/2) + 1
 			,((CASE
@@ -16,8 +17,9 @@ SELECT	r.Command
 		,DB_NAME(r.database_id) AS [Database]
 		,r.Status
 FROM	sys.dm_exec_requests r
-		CROSS APPLY sys.dm_exec_sql_text (r.sql_handle) st
-WHERE	r.session_id = @SPID;
+		OUTER APPLY sys.dm_exec_sql_text (r.sql_handle) st
+WHERE	r.session_id = @SPID
+OR		(r.command = 'DB STARTUP' AND percent_complete <> 0);
 
 SELECT   
        node_id,
