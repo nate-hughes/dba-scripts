@@ -1,4 +1,4 @@
-DECLARE @TableName AS VARCHAR(250) = '<TblName>';
+DECLARE @TableName AS VARCHAR(250) = '<tblname>';
 
 -- FOREIGN KEYS ON TARGET TABLE
 SELECT  fk.name                                                      AS ForeignKey
@@ -7,6 +7,7 @@ SELECT  fk.name                                                      AS ForeignK
         END                                                          AS IsNotForReplication
        ,OBJECT_NAME(fk.parent_object_id)                             AS TableName
        ,COL_NAME(fkc.parent_object_id, fkc.parent_column_id)         AS ColumnName
+	   ,SCHEMA_NAME(fk.schema_id)                                    AS ReferenceSchemaName
        ,OBJECT_NAME(fk.referenced_object_id)                         AS ReferenceTableName
        ,COL_NAME(fkc.referenced_object_id, fkc.referenced_column_id) AS ReferenceColumnName
 FROM    sys.foreign_keys                   AS fk
