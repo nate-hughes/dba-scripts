@@ -10,16 +10,18 @@ AND		type = 'E';
 
 DECLARE @l_DBId INT
 		,@l_TblId INT
-		,@l_Table VARCHAR(128) = 'schema.table';
+		,@l_Table VARCHAR(128) = NULL--'schema.table';
 
 SET @l_DBId = DB_ID();
 SET @l_TblId = OBJECT_ID(@l_Table);
 
 SELECT	TblId = o.object_id
+		, SchName = SCHEMA_NAME(o.schema_id)
 		, TblName = o.name
 		, [Rows] = MAX(CASE WHEN i.index_id IN(0,1) THEN p.rows END)
 		, Reserved = CONVERT(NUMERIC(9,1),SUM(a.total_pages) * @pgsz)
 		, Data = CONVERT(NUMERIC(9,1),SUM(CASE WHEN i.index_id IN(0,1) THEN a.data_pages END) * @pgsz)
+		, Indxs = CONVERT(INT,ISNULL(SUM(CASE WHEN i.index_id > 1 THEN 1 END),0))
 		, Indx = CONVERT(NUMERIC(9,1),ISNULL(SUM(CASE WHEN i.index_id > 1 THEN a.data_pages END),0) * @pgsz)
 		, Unused = CONVERT(NUMERIC(9,1),(SUM(a.total_pages) - SUM(a.used_pages)) * @pgsz)
 FROM	sys.objects o
@@ -34,6 +36,7 @@ WHERE	o.type = 'U'
 AND		o.is_ms_shipped = 0
 AND		(o.object_id = @l_TblId OR @l_TblId IS NULL)
 GROUP BY o.object_id
+		, o.schema_id
 		, o.name
 ORDER BY 4 DESC
 		, 2; 

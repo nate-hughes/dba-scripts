@@ -1,16 +1,16 @@
---SET QUOTED_IDENTIFIER ON;
---SET ANSI_PADDING ON;
---SET CONCAT_NULL_YIELDS_NULL ON;
---SET ANSI_WARNINGS ON;
---SET NUMERIC_ROUNDABORT OFF;
---SET ARITHABORT ON;
---GO
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_PADDING ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET ANSI_WARNINGS ON;
+SET NUMERIC_ROUNDABORT OFF;
+SET ARITHABORT ON;
+GO
 
 --IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_NAME = 'sp_WhoIsActive')
 --    EXEC ('CREATE PROC dbo.sp_WhoIsActive AS SELECT ''stub version, to be replaced''')
 --GO
 
-/*********************************************************************************************git
+/*********************************************************************************************
 Who Is Active? v12.00 (2021-11-10)
 (C) 2007-2021, Adam Machanic
 
@@ -21,20 +21,18 @@ Docs: http://whoisactive.com
 License:
     https://github.com/amachanic/sp_whoisactive/blob/master/LICENSE
 *********************************************************************************************/
---ALTER PROC dbo.sp_WhoIsActive -- kill 258 with statusonly
+--ALTER PROC dbo.sp_WhoIsActive
 DECLARE
---(t
---~ kill 543 with statusonly
---~ kill 249 with statusonly
---~ kill 534 with statusonly
---~ kill 395 with statusonly
+--(
+--~
+-- kill 414 with statusonly
     --Filters--Both inclusive and exclusive
     --Set either filter to '' to disable
     --Valid filter types are: session, program, database, login, and host
     --Session is a session ID, and either 0 or '' can be used to indicate "all" sessions
     --All other filter types support % or _ as wildcards
     @filter sysname = '',
-    @filter_type VARCHAR(10) = 'database',
+    @filter_type VARCHAR(10) = 'session',
     @not_filter sysname = '',
     @not_filter_type VARCHAR(10) = 'session',
 
@@ -49,19 +47,6 @@ DECLARE
     --1 pulls only those sleeping SPIDs that also have an open transaction
     --2 pulls all sleeping SPIDs
     @show_sleeping_spids TINYINT = 0,
-	
-    --Column(s) by which to sort output, optionally with sort directions.
-        --Valid column choices:
-        --session_id, physical_io, reads, physical_reads, writes, tempdb_allocations,
-        --tempdb_current, CPU, context_switches, used_memory, physical_io_delta, reads_delta,
-        --physical_reads_delta, writes_delta, tempdb_allocations_delta, tempdb_current_delta,
-        --CPU_delta, context_switches_delta, used_memory_delta, tasks, tran_start_time,
-        --open_tran_count, blocking_session_id, blocked_session_count, percent_complete,
-        --host_name, login_name, database_name, start_time, login_time, program_name
-        --
-        --Note that column names in the list must be bracket-delimited. Commas and/or white
-        --space are not required.
-    @sort_order VARCHAR(500) = '[start_time] ASC',
 
     --If 1, gets the full stored procedure or running batch, when available
     --If 0, gets only the actual statement that is currently running in the batch or procedure
@@ -131,6 +116,19 @@ DECLARE
     --delimited by square brackets. White space, formatting, and additional characters are
     --allowed, as long as the list contains exact matches of delimited valid column names.
     @output_column_list VARCHAR(8000) = '[dd%][session_id][sql_text][sql_command][login_name][wait_info][tasks][tran_log%][cpu%][temp%][block%][reads%][writes%][context%][physical%][query_plan][locks][%]',
+
+    --Column(s) by which to sort output, optionally with sort directions.
+        --Valid column choices:
+        --session_id, physical_io, reads, physical_reads, writes, tempdb_allocations,
+        --tempdb_current, CPU, context_switches, used_memory, physical_io_delta, reads_delta,
+        --physical_reads_delta, writes_delta, tempdb_allocations_delta, tempdb_current_delta,
+        --CPU_delta, context_switches_delta, used_memory_delta, tasks, tran_start_time,
+        --open_tran_count, blocking_session_id, blocked_session_count, percent_complete,
+        --host_name, login_name, database_name, start_time, login_time, program_name
+        --
+        --Note that column names in the list must be bracket-delimited. Commas and/or white
+        --space are not required.
+    @sort_order VARCHAR(500) = '[start_time] ASC',
 
     --Formats some of the output columns in a more "human readable" form
     --0 disables outfput format
@@ -1286,7 +1284,7 @@ BEGIN;
                 ''
             ) AS sort_order
     ) AS z;
-
+	DROP TABLE IF EXISTS #sessions;
     CREATE TABLE #sessions
     (
         recursion SMALLINT NOT NULL,
@@ -5496,7 +5494,4 @@ BEGIN;
         N'@num_data_threshold MONEY, @schema VARCHAR(MAX) OUTPUT',
         @num_data_threshold, @schema OUTPUT;
 END;
-
-DROP TABLE IF EXISTS #sessions;
-
 GO

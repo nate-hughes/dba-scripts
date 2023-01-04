@@ -1,3 +1,12 @@
+SET NOCOUNT ON;
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+GO
+
+DECLARE @TblName             sysname      = NULL--N'schema.table'
+       ,@TblId               INT;
+
+SET @TblId = OBJECT_ID(@TblName);
+
 SELECT	SCHEMA_NAME(o.schema_id) AS [Schema Name]
 		, o.name AS [Table Name]
 		, i.name AS [Index Name]
@@ -24,6 +33,7 @@ FROM	sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
 		INNER JOIN sys.objects o ON s.object_id = o.object_id
 WHERE	OBJECTPROPERTY(s.[object_id],'IsUserTable') = 1
 AND		s.database_id = DB_ID()
+AND		(o.object_id = @TblId OR @TblId IS NULL)
 AND		i.type_desc = 'NONCLUSTERED'
 AND		i.is_primary_key = 0
 AND		i.is_unique_constraint = 0
