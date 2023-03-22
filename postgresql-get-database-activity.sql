@@ -10,3 +10,19 @@ FROM pg_stat_activity
 WHERE clock_timestamp() - coalesce(xact_start, query_start) > '00:00:00.1'::interval
 AND pid <> pg_backend_pid() AND state <> 'idle'
 ORDER BY coalesce(xact_start, query_start);
+
+SELECT 
+    pid
+    ,datname
+    ,usename
+    ,application_name
+    ,client_hostname
+	,client_addr
+    ,client_port
+    ,backend_start
+    ,state
+	,state_change
+    ,query_start
+    ,query
+FROM pg_stat_activity
+WHERE state is not null;
