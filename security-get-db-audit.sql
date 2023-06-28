@@ -4,10 +4,10 @@ DECLARE @Login NVARCHAR(128)
 		, @ModDate DATETIME
 		, @Database NVARCHAR(128)
 		, @SQL NVARCHAR(MAX);
-
---SET @Login = 'LoginName';
-SET @ModDate = '3/1/2017';
---SET @Database = 'DBName';
+		
+SET @Login = 'loginname';
+--SET @ModDate = '7/21/2016';
+SET @Database = 'databasename';
 
 ----- DATABASE PERMISSIONS -----
 IF EXISTS (SELECT 1 FROM tempdb.sys.objects WHERE object_id = OBJECT_ID(N'[tempdb].[dbo].[#DB]') AND type in (N'U'))
@@ -38,7 +38,7 @@ SELECT	[Database] = DB_NAME()
 		, [Permission] = p.permission_name
 		, [Object] = CASE WHEN p.class = 0 THEN ''DB: '' + DB_NAME(p.major_id)
 				WHEN p.class = 3 THEN ''Schema: '' + s.name
-				ELSE ''Object: '' + OBJECT_NAME(p.major_id)
+				ELSE ''Object: '' + ISNULL(SCHEMA_NAME(so.schema_id) + ''.'','''') + OBJECT_NAME(p.major_id)
 			END
 		, [Login] = dp.name
 		, LoginType = dp.type_desc
