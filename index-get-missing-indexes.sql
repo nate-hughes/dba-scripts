@@ -17,7 +17,7 @@ SET NOCOUNT ON;
 
 DECLARE @DBId                INT          = DB_ID()
        ,@SchemaName          sysname
-       ,@TblName             sysname      = N'dbo.DNS'
+       ,@TblName             sysname      = NULL--N'dbo.DNS'
        ,@TblId               INT;
 
 SET @TblId = OBJECT_ID(@TblName);
@@ -58,7 +58,9 @@ WHERE   migs.group_handle IN (
             ORDER BY (avg_total_user_cost * avg_user_impact) * (user_seeks + user_scans) DESC
         )
 AND     OBJECTPROPERTY(o.object_id, 'isusertable') = 1
-AND     o.object_id = @TblId
+AND     (o.object_id = @TblId OR @TblName IS NULL)
 ORDER BY Impact DESC
         ,CreateIndexStatement DESC
 OPTION (MAXDOP 2);
+
+

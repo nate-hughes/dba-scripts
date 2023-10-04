@@ -130,6 +130,6 @@ SELECT DISTINCT i.SchemaName, i.TableName, i.IndexName,i.IndexType, i.Constraint
       AND i.ColName1 = i2.ColName1
       AND i.IndexName <> i2.IndexName
       AND i.IndexType <> 'XML'
-   ORDER BY i.TableName, i.AllColName;
+   ORDER BY i.SchemaName, i.TableName, i.AllColName;
    
 DROP TABLE #AllIndexes;
