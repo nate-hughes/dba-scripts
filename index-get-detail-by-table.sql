@@ -213,7 +213,7 @@ SELECT  OBJECT_NAME(i.object_id)                                        AS [Tabl
                  'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(i.object_id)) + '.'
                  + QUOTENAME(OBJECT_NAME(i.object_id)) + ' DROP CONSTRAINT ' + QUOTENAME(i.name)
              ELSE
-                 'DROP INDEX ' + QUOTENAME(i.name) + ' ON ' + QUOTENAME(OBJECT_SCHEMA_NAME(i.object_id)) + '.'
+                 'DROP INDEX IF EXISTS ' + QUOTENAME(i.name) + ' ON ' + QUOTENAME(OBJECT_SCHEMA_NAME(i.object_id)) + '.'
                  + QUOTENAME(OBJECT_NAME(i.object_id))
         END                                                             AS [Drop Statement]
 FROM    sys.indexes AS i WITH (NOLOCK)

@@ -20,7 +20,8 @@ SELECT	TblId = o.object_id
 		, TblName = o.name
 		, [Rows] = MAX(CASE WHEN i.index_id IN(0,1) THEN p.rows END)
 		, Reserved = CONVERT(NUMERIC(9,1),SUM(a.total_pages) * @pgsz)
-		, Data = CONVERT(NUMERIC(9,1),SUM(CASE WHEN i.index_id IN(0,1) THEN a.data_pages END) * @pgsz)
+		, Data = CONVERT(NUMERIC(9,1),SUM(CASE WHEN i.index_id IN (0,1) THEN a.data_pages END) * @pgsz)
+		, LOB = ISNULL(CONVERT(NUMERIC(9,1),SUM(CASE WHEN i.index_id IN (0,1) AND a.type_desc = 'LOB_DATA' THEN a.used_pages END) * @pgsz),0)
 		, Indxs = CONVERT(INT,ISNULL(SUM(CASE WHEN i.index_id > 1 THEN 1 END),0))
 		, Indx = CONVERT(NUMERIC(9,1),ISNULL(SUM(CASE WHEN i.index_id > 1 THEN a.data_pages END),0) * @pgsz)
 		, Unused = CONVERT(NUMERIC(9,1),(SUM(a.total_pages) - SUM(a.used_pages)) * @pgsz)
@@ -38,5 +39,6 @@ AND		(o.object_id = @l_TblId OR @l_TblId IS NULL)
 GROUP BY o.object_id
 		, o.schema_id
 		, o.name
-ORDER BY 4 DESC
-		, 2; 
+ORDER BY 5 DESC
+		, 2
+		, 3; 

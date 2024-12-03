@@ -23,5 +23,5 @@ SET @path = SUBSTRING(@tag, 38, CHARINDEX('MSSQL\Log', @tag) - 29);
 SELECT	CONVERT(xml, event_data).query('/event/data/value/child::*') AS DeadlockReport
 		,DATEADD(HOUR,@DateTimeOffset,CONVERT(xml, event_data).value('(event[@name="xml_deadlock_report"]/@timestamp)[1]', 'datetime')) AS Execution_Time
 FROM	sys.fn_xe_file_target_read_file (@path + '\system_health*.xel', NULL, NULL, NULL)
-WHERE	OBJECT_NAME like 'xml_deadlock_report'
+WHERE	OBJECT_NAME = 'xml_deadlock_report'
 ORDER BY Execution_Time DESC;

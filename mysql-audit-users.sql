@@ -35,12 +35,21 @@ FROM (
   IF(mu.Trigger_priv = 'Y', 'Trigger ', '')
   )), ' ', ', ') AS `Privileges`
  FROM
+  mysql.user mu ) x
+WHERE LENGTH(x.Privileges) > 0
+UNION
+SELECT
+  mu.host `Host`,
+  mu.user `User`,
+  re.from_user AS `Privileges`
+ FROM
   mysql.user mu
+  JOIN mysql.role_edges re ON mu.User = re.to_user
+WHERE mu.user <> 'rds_superuser_role'
  ORDER BY
-  mu.Host,
-  mu.User ) x
-WHERE LENGTH(x.Privileges) > 0;
-
+  Host,
+  User;
+  
 ------------------------------------------------------------------------------------
 
 -- schema level

@@ -38,7 +38,7 @@ FROM    sys.dm_sql_referencing_entities(@ObjName, 'OBJECT') e
 
 EXEC sp_MSdependencies @ObjName, NULL, 1315327;
 
-WITH ref_inputs (tblename, objschema, objname, objtype)
+WITH ref_inputs (objschema, objname, objtype)
 AS (
     SELECT  e.referencing_schema_name  AS objschema
 			,e.referencing_entity_name AS objname
