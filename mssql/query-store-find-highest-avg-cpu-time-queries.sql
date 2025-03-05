@@ -1,11 +1,16 @@
-DECLARE @Top INT = 5
-		,@FromTime DATETIME = '2019-01-01 00:00:00'
-		,@ToTime DATETIME = GETDATE();
+-- Retrieve the top 5 highest average CPU time statements from Query Store within the last hour
 
-SELECT TOP(@Top) qsp.query_id,
-		OBJECT_NAME(qsq.object_id) AS sproc,
-        qsqt.query_sql_text,
-		SUM(qsrt.count_executions) as count_executions
+DECLARE @top_n INT = 5
+		,@FromTime DATETIME = DATEADD(HOUR, -1, GETUTCDATE()) 
+		,@ToTime DATETIME = GETUTCDATE();
+
+SELECT	TOP (@top_n) qsp.query_id
+		,CASE
+			WHEN qsq.object_id = 0 THEN N'Ad-hoc'
+			ELSE OBJECT_NAME(qsq.object_id) 
+		END AS sproc
+		,qsqt.query_sql_text
+		,AVG(qsrt.avg_cpu_time) AS avg_cpu_time
 	FROM sys.query_store_query qsq 
 	INNER JOIN sys.query_store_query_text qsqt ON qsqt.query_text_id = qsq.query_text_id
 	INNER JOIN sys.query_store_plan qsp ON qsp.query_id = qsq.query_id
@@ -13,6 +18,6 @@ SELECT TOP(@Top) qsp.query_id,
 	INNER JOIN sys.query_store_runtime_stats_interval qsrsi ON qsrsi.runtime_stats_interval_id = qsrt.runtime_stats_interval_id
 WHERE qsrsi.start_time >= @FromTime AND qsrsi.start_time < @ToTime
 GROUP BY qsp.query_id,
-		OBJECT_NAME(qsq.object_id),
+		qsq.object_id,
         qsqt.query_sql_text
-ORDER BY SUM(qsrt.count_executions) DESC;
+ORDER BY AVG(qsrt.avg_cpu_time) DESC;

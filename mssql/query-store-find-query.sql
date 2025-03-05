@@ -1,6 +1,8 @@
-/***** SCRIPT NEEDS EITHER @proc OR @sql_text TO WORK *****/
-DECLARE @proc VARCHAR(200) = 'Salesforce_Reporting_January2018'
-		,@sql_text VARCHAR(MAX) = NULL--''
+-- Retrieve aggregated execution and performance statistics for a specified query id, stored procedure, or SQL text from Query Store
+
+DECLARE @query_id INT = 320
+		,@proc VARCHAR(200) = NULL--'proc_name'
+		,@sql_text VARCHAR(MAX) = NULL--'sql_text'
 ;
 
 SELECT  q.query_id,
@@ -29,9 +31,10 @@ FROM    sys.query_store_query q
         INNER JOIN sys.query_store_query_text qt ON qt.query_text_id = q.query_text_id
 		INNER JOIN sys.query_store_plan p ON q.query_id = p.query_id
 		INNER JOIN sys.query_store_runtime_stats rs ON p.plan_id = rs.plan_id
-WHERE (@proc IS NULL OR q.object_id = OBJECT_ID(@proc))
-AND	(@sql_text IS NULL OR qt.query_sql_text LIKE '%' + @sql_text + '%')
-AND rs.execution_type = 0 -- Regular execution (successfully finished)
+WHERE	(@query_id IS NULL OR q.query_id = @query_id)
+		AND (@proc IS NULL OR q.object_id = OBJECT_ID(@proc))
+		AND	(@sql_text IS NULL OR qt.query_sql_text LIKE '%' + @sql_text + '%')
+		AND rs.execution_type = 0 -- Regular execution (successfully finished)
 GROUP BY q.query_id,
         q.query_hash,
         q.initial_compile_start_time,

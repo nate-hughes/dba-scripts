@@ -1,3 +1,4 @@
+-- Retrieve and consolidate forced plans from Query Store across the databases on this server
 
 DECLARE @sql_querystore NVARCHAR(2000)
 		,@IsHadrEnabled TINYINT = CONVERT(TINYINT,SERVERPROPERTY ('IsHadrEnabled'))
