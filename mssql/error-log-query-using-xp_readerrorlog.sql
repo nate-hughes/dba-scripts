@@ -8,7 +8,7 @@ DECLARE @ArchiveID   INT --Value of error log file you want to read: 0 = current
 
 SELECT  @ArchiveID   = 0
        ,@LogFileType = 1
-       ,@Filter1Text = NULL
+       ,@Filter1Text = null
        ,@Filter2Text = NULL
        ,@FirstEntry  = CONVERT(DATE,GETDATE())
        ,@LastEntry   = NULL

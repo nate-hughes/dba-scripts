@@ -1,0 +1,14 @@
+/***** DBLoad vs Serverless Capacity *****/
+{
+    "metrics": [
+        [ "AWS/RDS", "ServerlessDatabaseCapacity", "DBInstanceIdentifier", "prd-opportunity-instance-0" ],
+        [ ".", "DBLoad", ".", "." ],
+        [ ".", "DatabaseConnections", ".", ".", { "visible": false } ]
+    ],
+    "stat": "Maximum",
+    "period": 60,
+    "region": "us-east-1",
+    "view": "timeSeries",
+    "stacked": false
+}
+

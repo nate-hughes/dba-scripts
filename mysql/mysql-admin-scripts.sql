@@ -7,6 +7,10 @@ FROM	information_schema.PROCESSLIST
 WHERE	COMMAND != 'Sleep'
 ORDER BY TIME DESC;
 
+-- Find current waits
+SELECT	*
+FROM	performance_schema.rds_events_threads_waits_current;
+
 -- Find Running Transactions
 SELECT	*
 FROM	information_schema.innodb_trx;

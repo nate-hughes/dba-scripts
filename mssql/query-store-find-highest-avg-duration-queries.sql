@@ -1,7 +1,7 @@
 -- Retrieve the top 5 highest average duration statements from Query Store within the last hour
 
-DECLARE @Top INT = 5
-		,@FromTime DATETIME = DATEADD(HOUR, -1, GETUTCDATE()) 
+DECLARE @Top INT = 50
+		,@FromTime DATETIME = DATEADD(HOUR, -3, GETUTCDATE()) 
 		,@ToTime DATETIME = GETUTCDATE();
 
 SELECT TOP(@Top) qsp.query_id,

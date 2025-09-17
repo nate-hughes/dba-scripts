@@ -25,14 +25,14 @@ License:
 DECLARE
 --(
 --~
--- kill 414 with statusonly
+-- kill 1043 with statusonly
     --Filters--Both inclusive and exclusive
     --Set either filter to '' to disable
     --Valid filter types are: session, program, database, login, and host
     --Session is a session ID, and either 0 or '' can be used to indicate "all" sessions
     --All other filter types support % or _ as wildcards
     @filter sysname = '',
-    @filter_type VARCHAR(10) = 'session',
+    @filter_type VARCHAR(10) = 'login',
     @not_filter sysname = '',
     @not_filter_type VARCHAR(10) = 'session',
 
