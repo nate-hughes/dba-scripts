@@ -22,7 +22,7 @@ CREATE TABLE #DB_FILE_INFO (
 );
 
 DECLARE @l_sql NVARCHAR(4000)
-		,@l_DBName NVARCHAR(128) = NULL
+		,@l_DBName NVARCHAR(128) = 'ApplicationProcessor'
 ;
 
 SET @l_sql =
@@ -75,3 +75,4 @@ ORDER BY DBName
 		, [type]
 		, FileId;
 
+-- select 14755424 - 

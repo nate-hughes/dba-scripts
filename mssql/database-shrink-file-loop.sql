@@ -1,17 +1,19 @@
 SET NOCOUNT ON;
 
-USE MFDW;
+USE ApplicationProcessor;
 GO
 -- SELECT * FROM sys.sysfiles;
 
 DECLARE @sql VARCHAR(8000)
-		,@name sysname = 'odsIndex' -- database file to shrink
+		,@name sysname = 'ApplicationProcessor' -- database file to shrink
 		,@sizeMB INT
 		,@usedMB INT
-		,@freeMB INT = 364314 -- desired free space in MB after shrink
+		,@freeMB INT = 321289 -- desired free space in MB after shrink
 		,@shrinkMB INT = 512 -- increment to shrink file by in MB
 		,@startRun datetime
 		,@endRun datetime;
+
+-- select (425-285) * 1024, 10240 / 512, 324238 - 10240
 
 -- Get current file size in MB
 SELECT @sizeMB = [size] / 128. FROM sys.sysfiles WHERE [name] = @name;
@@ -43,6 +45,6 @@ END;
 
 SELECT [EndFileSize] = @sizeMB, [EndUsedSpace] = @usedMB, [File] = @name;
 
-SELECT (362735 - 216814) - 38000
-SELECT (594671 - 362735) / 1024
-SELECT 216814 * .5
+--SELECT (14755424 - 14396135) - 38000
+--SELECT (594671 - 362735) / 1024
+--SELECT 216814 * .5

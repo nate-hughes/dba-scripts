@@ -4,7 +4,7 @@ GO
 
 DECLARE @DBId                INT          = DB_ID()
        ,@SchemaName          sysname
-       ,@TblName             sysname      = N'customer.customer_name'
+       ,@TblName             sysname      = N'schema.table'
        ,@TblId               INT
        ,@MinFragmentation    REAL         = 5.0 -- Defaulted to 5% as recommended by MS in BOL
        ,@MinPageCount        INT          = 1000 -- Defaulted to 1000 pages as recommended by MS in BOL

@@ -1,4 +1,19 @@
 /*
+-- Microsoft Now Recommends You Set Max Memory to 75% and Min Memory to 0%.
+https://www.brentozar.com/archive/2025/09/microsoft-now-recommends-you-set-max-memory-to-75-and-min-memory-to-0/
+https://learn.microsoft.com/en-us/sql/database-engine/configure-windows/server-memory-server-configuration-options?view=sql-server-ver15#recommendations
+*/
+
+/* Set max server memory to MIN(85% of total RAM, total RAM - 4 GB). */
+SELECT CASE
+		WHEN (physical_memory_kb * .85) + (4 * 1024 * 1024) >= physical_memory_kb
+		THEN (physical_memory_kb - (4 * 1024 * 1024)) / 1024
+		ELSE  (physical_memory_kb * .85) / 1024
+	END
+FROM sys.dm_os_sys_info;
+ 
+
+/*
 https://straightpathsql.com/archives/2017/02/sql-server-max-memory-best-practices/
 */
 
