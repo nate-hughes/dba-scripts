@@ -8,7 +8,7 @@
 -- 02242016 - modified to just breakdown Windows Groups
 
 set nocount on;
-declare @ctr nvarchar(max) = '', @AcctName sysname = ''
+declare @ctr nvarchar(max) = '', @AcctName sysname = '', @search sysname = ''
 
 -- Create a table to store xp_logininfo commands
 -- We have to individually execute them in case the login no longer exists
@@ -186,6 +186,7 @@ SELECT	DISTINCT
        ,LL.[Account Name]
        ,LL.Server_Roles
 FROM    #LoginsList LL
+WHERE	LL.[Account Name] LIKE '%' + @search + '%' OR @search = ''
 ORDER BY LL.[Permission Path]
 		,LL.[Account Name];
 

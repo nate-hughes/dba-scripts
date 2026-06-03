@@ -4,6 +4,7 @@ select
         coalesce(t.spcname, 'pg_default') as tablespace,
         n.nspname ||'.'||c.relname as table,
         (select count(*) from pg_index i where i.indrelid=c.oid) as index_count,
+  		c.reltuples::bigint as est_row_count,
         pg_size_pretty(pg_relation_size(c.oid, 'main')) as rel_main_size,
         pg_size_pretty(pg_relation_size(c.oid, 'fsm')) as rel_fsm_size,
         pg_size_pretty(pg_relation_size(c.oid, 'vm')) as rel_vm_size,

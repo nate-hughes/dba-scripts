@@ -25,7 +25,7 @@ License:
 DECLARE
 --(
 --~
--- kill 406 with statusonly
+-- kill 278 with statusonly
     --Filters--Both inclusive and exclusive
     --Set either filter to '' to disable
     --Valid filter types are: session, program, database, login, and host

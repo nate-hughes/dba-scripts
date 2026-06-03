@@ -1,66 +1,118 @@
-/* ------------------------------------------------------------------
--- Title:	FindMissingIndexes
--- Author:	Brent Ozar
--- Date:	2009-04-01 
--- Modified By: Clayton Kramer <ckramer.kramer @="" gmail.com="">
--- Description: This query returns indexes that SQL Server 2005 
--- (and higher) thinks are missing since the last restart. The 
--- "Impact" column is relative to the time of last restart and how 
--- bad SQL Server needs the index. 10 million+ is high.
--- Changes: Updated to expose full table name. This makes it easier
--- to identify which database needs an index. Modified the 
--- CreateIndexStatement to use the full table path and include the
--- equality/inequality columns for easier identifcation.
--- 20210930 - NEH - added [Rec Index Last Seek]
------------------------------------------------------------------- */
+/*
+Identify missing-index candidates from SQL Server missing-index DMVs for the current database.
+*/
+
 SET NOCOUNT ON;
 
-DECLARE @DBId                INT          = DB_ID()
-       ,@SchemaName          sysname
-       ,@TblName             sysname      = NULL--N'dbo.DNS'
-       ,@TblId               INT;
+DECLARE @DBId        INT     = DB_ID()
+        ,@SchemaName SYSNAME = NULL
+        ,@TblName    SYSNAME = NULL
+        ,@TblId      INT
+        ,@TopN       INT     = 500;
 
-SET @TblId = OBJECT_ID(@TblName);
-SET @SchemaName = OBJECT_SCHEMA_NAME(@TblId, @DBId);
+IF @TblName IS NOT NULL
+BEGIN
+    SET @TblId = OBJECT_ID(
+                    CASE 
+                        WHEN @SchemaName IS NULL THEN QUOTENAME(@TblName)
+                        ELSE QUOTENAME(@SchemaName) + N'.' + QUOTENAME(@TblName)
+                    END
+                );
+END;
 
-SELECT  CONVERT(NUMERIC(19, 2), (migs.avg_total_user_cost * migs.avg_user_impact) * (migs.user_seeks + migs.user_scans)) AS Impact
-       ,mid.statement                                                                                                    AS [Table]
-       ,mid.equality_columns -- table.column = constant_value
-       ,mid.inequality_columns -- table.column > constant_value
-       ,mid.included_columns
-       ,(migs.user_seeks + migs.user_scans)                                                                              AS [Rec Index Reads]
-       ,migs.last_user_seek																								 AS [Rec Index Last Seek]
-       ,'CREATE NONCLUSTERED INDEX ix_' + o.name COLLATE DATABASE_DEFAULT + '_'
-        + REPLACE(
-                     REPLACE(
-                                REPLACE(ISNULL(mid.equality_columns, '') + ISNULL(mid.inequality_columns, ''), '[', '')
-                               ,']', ''
-                            ), ', ', '_'
-                 ) + ' ON ' + mid.statement + ' ( ' + ISNULL(mid.equality_columns, '')
-        + CASE WHEN mid.inequality_columns IS NULL THEN ''
-               ELSE CASE WHEN mid.equality_columns IS NULL THEN ''
-                         ELSE ','
-                    END + mid.inequality_columns
-          END + ' ) ' + CASE WHEN mid.included_columns IS NULL THEN ''
-                             ELSE 'INCLUDE (' + mid.included_columns + ')'
-                        END + ' WITH ( FILLFACTOR = 100 ) ON [PRIMARY]' + ';'                                            AS CreateIndexStatement
-FROM    sys.dm_db_missing_index_group_stats        AS migs
-        INNER JOIN sys.dm_db_missing_index_groups  AS mig
+WITH MissingIndexBase AS (
+    SELECT  mid.index_handle
+            ,mig.index_group_handle
+            ,migs.group_handle
+            ,mid.database_id
+            ,mid.object_id
+            ,mid.statement AS FullObjectName
+            ,mid.equality_columns AS EqualityColumns
+            ,mid.inequality_columns AS InequalityColumns
+            ,mid.included_columns AS IncludedColumns
+            ,migs.unique_compiles AS UniqueCompiles
+            ,migs.user_seeks AS UserSeeks
+            ,migs.user_scans AS UserScans
+            ,migs.last_user_seek AS LastUserSeek
+            ,migs.last_user_scan AS LastUserScan
+            ,migs.avg_total_user_cost AS AvgTotalUserCost
+            ,migs.avg_user_impact AS AvgUserImpact
+            ,CONVERT(NUMERIC(19, 2), (migs.avg_total_user_cost * (migs.avg_user_impact / 100.0)) * (migs.user_seeks + migs.user_scans)) AS EstimatedImpact
+    FROM sys.dm_db_missing_index_group_stats migs
+        JOIN sys.dm_db_missing_index_groups mig
             ON migs.group_handle = mig.index_group_handle
-        INNER JOIN sys.dm_db_missing_index_details AS mid
+        JOIN sys.dm_db_missing_index_details mid
             ON mig.index_handle = mid.index_handle
-        INNER JOIN sys.objects AS o WITH (NOLOCK)
-            ON mid.object_id = o.object_id
-WHERE   migs.group_handle IN (
-            SELECT TOP (500)
-					group_handle
-            FROM  sys.dm_db_missing_index_group_stats WITH (NOLOCK)
-            ORDER BY (avg_total_user_cost * avg_user_impact) * (user_seeks + user_scans) DESC
-        )
-AND     OBJECTPROPERTY(o.object_id, 'isusertable') = 1
-AND     (o.object_id = @TblId OR @TblName IS NULL)
-ORDER BY Impact DESC
+    WHERE mid.database_id = @DBId
+),
+MissingIndexRanked AS (
+    SELECT  mib.*
+            ,ROW_NUMBER() OVER (
+                ORDER BY mib.EstimatedImpact DESC
+                        ,mib.UserSeeks + mib.UserScans DESC
+                        ,mib.LastUserSeek DESC
+            ) AS ImpactRank
+    FROM MissingIndexBase mib
+)
+SELECT  mir.EstimatedImpact
+        ,mir.ImpactRank
+        ,SCHEMA_NAME(o.schema_id) AS SchemaName
+        ,o.name AS TblName
+        ,mir.FullObjectName AS DMVObjectName
+        ,mir.EqualityColumns
+        ,mir.InequalityColumns
+        ,mir.IncludedColumns
+        ,mir.UserSeeks
+        ,mir.UserScans
+        ,mir.UserSeeks + mir.UserScans AS RecIndexReads
+        ,mir.LastUserSeek
+        ,mir.LastUserScan
+        ,mir.UniqueCompiles
+        ,mir.AvgTotalUserCost
+        ,mir.AvgUserImpact
+        ,CASE
+            WHEN mir.EqualityColumns IS NULL AND mir.InequalityColumns IS NOT NULL THEN 'Inequality-only recommendation - review selectivity carefully'
+            WHEN mir.UserSeeks = 0 AND mir.UserScans > 0 THEN 'Scan-only recommendation - review carefully'
+            WHEN mir.UserSeeks + mir.UserScans < 10 THEN 'Low read count - review carefully'
+            WHEN mir.UniqueCompiles = 1 THEN 'Single compile - review carefully'
+            ELSE 'Review candidate'
+         END AS ReviewNote
+        ,'CREATE NONCLUSTERED INDEX '
+            + QUOTENAME(
+                LEFT(
+                    'IX_' + o.name + '_' 
+                    + CONVERT(VARCHAR(32), HASHBYTES(
+                        'MD5',
+                        ISNULL(mir.EqualityColumns, '') 
+                        + ISNULL(mir.InequalityColumns, '') 
+                        + ISNULL(mir.IncludedColumns, '')
+                    ), 2),
+                    128
+                )
+            )
+            + ' ON ' + QUOTENAME(DB_NAME(@DBId)) + '.' + QUOTENAME(SCHEMA_NAME(o.schema_id)) + '.' + QUOTENAME(o.name)
+            + ' ('
+            + ISNULL(mir.EqualityColumns, '')
+            + CASE 
+                WHEN mir.EqualityColumns IS NOT NULL AND mir.InequalityColumns IS NOT NULL THEN ', '
+                ELSE ''
+              END
+            + ISNULL(mir.InequalityColumns, '')
+            + ')'
+            + CASE 
+                WHEN mir.IncludedColumns IS NULL THEN ''
+                ELSE ' INCLUDE (' + mir.IncludedColumns + ')'
+              END
+            + ';' AS CreateIndexStatement
+FROM MissingIndexRanked mir
+    JOIN sys.objects o
+        ON mir.object_id = o.object_id
+WHERE o.type = 'U'
+  AND o.is_ms_shipped = 0
+  AND mir.ImpactRank <= @TopN
+  AND (@SchemaName IS NULL OR SCHEMA_NAME(o.schema_id) = @SchemaName)
+  AND (@TblName IS NULL OR o.object_id = @TblId)
+ORDER BY schemaname, tblname, mir.EstimatedImpact DESC
+        ,RecIndexReads DESC
         ,CreateIndexStatement DESC
 OPTION (MAXDOP 2);
-
-

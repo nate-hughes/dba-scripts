@@ -28,4 +28,3 @@ SELECT  database_name
 FROM    sys.availability_databases_cluster
 ORDER BY database_name;
 GO
-

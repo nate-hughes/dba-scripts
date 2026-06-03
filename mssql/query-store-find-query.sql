@@ -1,8 +1,8 @@
 -- Retrieve aggregated execution and performance statistics for a specified query id, stored procedure, or SQL text from Query Store
 
-DECLARE @query_id INT = null
+DECLARE @query_id INT = 29
 		,@proc VARCHAR(200) = NULL--'proc_name'
-		,@sql_text VARCHAR(MAX) = 'customer_domain_map'--'sql_text'
+		,@sql_text VARCHAR(MAX) = 'select a.cid'--'sql_text'
 ;
 
 SELECT  q.query_id,

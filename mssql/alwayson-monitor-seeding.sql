@@ -1,4 +1,4 @@
-DECLARE @DatabaseName VARCHAR(128) = NULL; -- leave NULL for all
+DECLARE @DatabaseName VARCHAR(128) = 'flra30'; -- leave NULL for all
 
 SELECT	ag.name AS ag_name
 		,adc.database_name

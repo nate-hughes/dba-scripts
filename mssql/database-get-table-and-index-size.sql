@@ -9,7 +9,7 @@ WHERE	number = 1
 AND		type = 'E';
 
 DECLARE @l_DBId INT
-		,@l_TblName VARCHAR(128) = 'schema.table'
+		,@l_TblName VARCHAR(128) = NULL --'schema.table'
 		,@l_TblId INT;
 
 SET @l_DBId = DB_ID();

@@ -22,7 +22,7 @@ CREATE TABLE #DB_FILE_INFO (
 );
 
 DECLARE @l_sql NVARCHAR(4000)
-		,@l_DBName NVARCHAR(128) = 'ApplicationProcessor'
+		,@l_DBName NVARCHAR(128) = 'db_monitor'
 ;
 
 SET @l_sql =

@@ -1,14 +1,14 @@
 SET NOCOUNT ON;
 
-USE ApplicationProcessor;
+USE db_monitor;
 GO
 -- SELECT * FROM sys.sysfiles;
 
 DECLARE @sql VARCHAR(8000)
-		,@name sysname = 'ApplicationProcessor' -- database file to shrink
+		,@name sysname = 'db_monitor' -- database file to shrink
 		,@sizeMB INT
 		,@usedMB INT
-		,@freeMB INT = 321289 -- desired free space in MB after shrink
+		,@freeMB INT = 179200 -- desired free space in MB after shrink
 		,@shrinkMB INT = 512 -- increment to shrink file by in MB
 		,@startRun datetime
 		,@endRun datetime;
@@ -23,9 +23,7 @@ SELECT @usedMB = FILEPROPERTY( @name, 'SpaceUsed' ) / 128.;
 SELECT [StartFileSize] = @sizeMB, [StartUsedSpace] = @usedMB, [File] = @name;
 /*
 StartFileSize	StartUsedSpace	File
-4,546,560	    14,509	        FLRA30.FLRA30
-523,385	        2,872	        MFDM.MFDM
-594,671	        223,066	        MFDW.odsIndex
+292,786	        22,445	        db_monitor
 */
 
 -- Loop until file at desired size
